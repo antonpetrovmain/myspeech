@@ -39,7 +39,6 @@ class MySpeechApp:
         def do_stop():
             with self._lock:
                 audio_bytes = self._recorder.stop()
-                self._popup.hide()
 
                 if not audio_bytes:
                     self._clipboard.restore()
@@ -53,6 +52,10 @@ class MySpeechApp:
                 ).start()
 
         self._popup.schedule(do_stop)
+
+    def _on_keys_released(self):
+        """Called when all hotkey keys are released - safe to hide popup."""
+        self._popup.schedule(self._popup.hide)
 
     def _process_transcription(self, audio_bytes: bytes):
         text = self._transcriber.transcribe(audio_bytes)
@@ -95,6 +98,7 @@ class MySpeechApp:
         self._hotkey = HotkeyListener(
             on_record_start=self._on_record_start,
             on_record_stop=self._on_record_stop,
+            on_keys_released=self._on_keys_released,
             on_open_recording=self._on_open_recording,
         )
         self._hotkey.start()

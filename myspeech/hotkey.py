@@ -13,14 +13,17 @@ class HotkeyListener:
         self,
         on_record_start: Callable[[], None],
         on_record_stop: Callable[[], None],
+        on_keys_released: Callable[[], None] | None = None,
         on_open_recording: Callable[[], None] | None = None,
     ):
         self._on_record_start = on_record_start
         self._on_record_stop = on_record_stop
+        self._on_keys_released = on_keys_released
         self._on_open_recording = on_open_recording
         self._pressed_modifiers: set[str] = set()
         self._pressed_key_codes: set[int] = set()
         self._hotkey_active = False
+        self._waiting_for_release = False  # Track if we're waiting for all keys to be released
         self._last_record_end: float = 0
         self._lock = threading.Lock()
         self._listener: keyboard.Listener | None = None
@@ -59,6 +62,17 @@ class HotkeyListener:
             return False
         return self._check_modifiers() and config.HOTKEY_OPEN_RECORDING_KEY_CODE in self._pressed_key_codes
 
+    def _all_hotkey_keys_released(self) -> bool:
+        """Check if all hotkey keys (modifiers + main key) are released."""
+        # Check if main key is still pressed
+        if config.HOTKEY_KEY_CODE in self._pressed_key_codes:
+            return False
+        # Check if any required modifier is still pressed
+        for mod in config.HOTKEY_MODIFIERS:
+            if mod in self._pressed_modifiers:
+                return False
+        return True
+
     def _on_press(self, key):
         modifier = self._get_modifier(key)
         key_code = self._get_key_code(key)
@@ -92,10 +106,18 @@ class HotkeyListener:
             if key_code is not None:
                 self._pressed_key_codes.discard(key_code)
 
+            # Stop recording when hotkey is broken, but wait for all keys to be released
             if self._hotkey_active and not self._check_record_hotkey():
                 self._hotkey_active = False
+                self._waiting_for_release = True
                 self._last_record_end = time.time()
                 threading.Thread(target=self._on_record_stop, daemon=True).start()
+
+            # Notify when all hotkey keys are released
+            if self._waiting_for_release and self._all_hotkey_keys_released():
+                self._waiting_for_release = False
+                if self._on_keys_released:
+                    threading.Thread(target=self._on_keys_released, daemon=True).start()
 
     def start(self):
         self._listener = keyboard.Listener(
