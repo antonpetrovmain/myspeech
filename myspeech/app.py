@@ -75,9 +75,8 @@ class MySpeechApp:
             print(f"RAM: {used:,} MB used / {free:,} MB free / {total:,} MB total")
 
     def _on_open_recording(self):
-        recording_path = "/tmp/myspeech_recording.wav"
         try:
-            subprocess.run(["open", recording_path], check=False)
+            subprocess.run(["open", config.RECORDING_PATH], check=False)
         except Exception:
             pass
 

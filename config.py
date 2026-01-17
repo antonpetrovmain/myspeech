@@ -10,7 +10,8 @@ WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
 SAMPLE_RATE = 16000
 CHANNELS = 1
 AUDIO_DEVICE = None  # Set to device index (e.g., 4) or name, or None for default
-SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
+SAVE_RECORDING = True  # Save last recording for playback
+RECORDING_PATH = "/tmp/myspeech_recording.wav"
 
 # Hotkey (key codes detected on this system)
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
@@ -26,4 +27,3 @@ POPUP_TEXT = "Recording..."
 
 # Clipboard
 PASTE_DELAY = 0.1  # seconds to wait before pasting
-RESTORE_DELAY = 0.2  # seconds to wait before restoring clipboard

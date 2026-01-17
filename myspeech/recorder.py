@@ -78,8 +78,8 @@ class Recorder:
         wav_bytes = buffer.getvalue()
 
         # Save recording to file (before level check, so we can review failed recordings)
-        if getattr(config, 'SAVE_RECORDING', False):
-            with open("/tmp/myspeech_recording.wav", "wb") as f:
+        if config.SAVE_RECORDING:
+            with open(config.RECORDING_PATH, "wb") as f:
                 f.write(wav_bytes)
 
         # Skip if too short or silent

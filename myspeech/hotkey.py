@@ -58,8 +58,6 @@ class HotkeyListener:
         return self._check_modifiers() and config.HOTKEY_KEY_CODE in self._pressed_key_codes
 
     def _check_open_recording_hotkey(self) -> bool:
-        if not hasattr(config, 'HOTKEY_OPEN_RECORDING_KEY_CODE'):
-            return False
         return self._check_modifiers() and config.HOTKEY_OPEN_RECORDING_KEY_CODE in self._pressed_key_codes
 
     def _all_hotkey_keys_released(self) -> bool:
@@ -130,7 +128,3 @@ class HotkeyListener:
         if self._listener:
             self._listener.stop()
             self._listener = None
-
-    def join(self):
-        if self._listener:
-            self._listener.join()
