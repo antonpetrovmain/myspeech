@@ -23,7 +23,6 @@ POPUP_HEIGHT = 40
 POPUP_BG_COLOR = "#cc0000"
 POPUP_TEXT_COLOR = "white"
 POPUP_TEXT = "Recording..."
-POPUP_DELAY_MS = 500  # Delay before showing popup (recording starts immediately)
 
 # Clipboard
 PASTE_DELAY = 0.1  # seconds to wait before pasting

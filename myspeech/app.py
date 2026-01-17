@@ -30,14 +30,8 @@ class MySpeechApp:
 
         def do_start():
             with self._lock:
-                # Start recording immediately
                 self._recorder.start()
-
-            # Show popup after delay so user knows recording is active
-            def show_popup():
-                self._popup.show()
-
-            self._popup.schedule_delayed(config.POPUP_DELAY_MS, show_popup)
+            self._popup.show()
 
         self._popup.schedule(do_start)
 
