@@ -1,0 +1,21 @@
+[project]
+name = "myspeech"
+version = "0.1.0"
+description = "macOS speech-to-text with global hotkey activation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pynput>=1.7.6",
+    "sounddevice>=0.4.6",
+    "numpy>=1.24.0",
+    "pyperclip>=1.8.2",
+    "openai>=1.0.0",
+    "mlx-omni-server>=0.4.0",
+]
+
+[project.scripts]
+myspeech = "myspeech.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
