@@ -8,7 +8,7 @@ class Transcriber:
     def __init__(self):
         self.client = OpenAI(
             api_key="local",  # Any string works for local server
-            base_url=config.MLX_SERVER_URL,
+            base_url=config.MLX_AUDIO_SERVER_URL,
         )
 
     def transcribe(self, audio_bytes: bytes) -> str | None:
@@ -20,7 +20,7 @@ class Transcriber:
             audio_file.name = "recording.wav"
 
             response = self.client.audio.transcriptions.create(
-                model="mlx-community/whisper-large-v3-turbo",
+                model=config.WHISPER_MODEL,
                 file=audio_file,
             )
             return response.text.strip() if response.text else None

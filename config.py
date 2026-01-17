@@ -1,7 +1,10 @@
 # MySpeech Configuration
 
-# Server
-MLX_SERVER_URL = "http://localhost:10240/v1"
+# Server (mlx-audio)
+MLX_AUDIO_SERVER_URL = "http://localhost:8000/v1"
+
+# Whisper model for transcription
+WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
 
 # Audio
 SAMPLE_RATE = 16000

@@ -78,7 +78,7 @@ class MySpeechApp:
     def run(self):
         # Ensure server is running
         if not self._server.start():
-            print("Cannot start without mlx-omni-server. Exiting.")
+            print("Cannot start without mlx-audio server. Exiting.")
             sys.exit(1)
 
         print("MySpeech started.")

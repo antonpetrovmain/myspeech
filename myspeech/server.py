@@ -12,7 +12,7 @@ class ServerManager:
 
     def is_running(self) -> bool:
         try:
-            url = f"{config.MLX_SERVER_URL}/models"
+            url = f"{config.MLX_AUDIO_SERVER_URL}/models"
             req = urllib.request.Request(url, method="GET")
             with urllib.request.urlopen(req, timeout=2):
                 return True
@@ -21,12 +21,12 @@ class ServerManager:
 
     def start(self, timeout: int = 120) -> bool:
         if self.is_running():
-            print("mlx-omni-server already running.")
+            print("mlx-audio server already running.")
             return True
 
-        print("Starting mlx-omni-server...")
+        print("Starting mlx-audio server...")
         self._process = subprocess.Popen(
-            ["mlx-omni-server"],
+            ["mlx_audio.server", "--port", "8000"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -35,11 +35,11 @@ class ServerManager:
         start_time = time.time()
         while time.time() - start_time < timeout:
             if self.is_running():
-                print("mlx-omni-server started.")
+                print("mlx-audio server started.")
                 return True
             time.sleep(1)
 
-        print("Failed to start mlx-omni-server.")
+        print("Failed to start mlx-audio server.")
         self.stop()
         return False
 
