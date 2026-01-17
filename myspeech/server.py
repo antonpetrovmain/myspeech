@@ -78,3 +78,58 @@ class ServerManager:
             return total_mb if total_mb > 0 else None
         except Exception:
             return None
+
+
+def get_system_memory() -> tuple[int, int, int] | None:
+    """Get system memory stats: (total_mb, used_mb, free_mb)."""
+    try:
+        # Get total RAM
+        result = subprocess.run(
+            ["sysctl", "-n", "hw.memsize"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+        total_bytes = int(result.stdout.strip())
+        total_mb = total_bytes // (1024 * 1024)
+
+        # Get memory pressure info from vm_stat
+        result = subprocess.run(
+            ["vm_stat"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+
+        # Parse vm_stat output
+        stats = {}
+        for line in result.stdout.strip().split("\n"):
+            if ":" in line:
+                key, value = line.split(":", 1)
+                # Remove " pages" and trailing period, convert to int
+                value = value.strip().rstrip(".")
+                if value.isdigit():
+                    stats[key.strip()] = int(value)
+
+        # Page size is typically 16384 on Apple Silicon, 4096 on Intel
+        page_size_result = subprocess.run(
+            ["pagesize"],
+            capture_output=True,
+            text=True,
+        )
+        page_size = int(page_size_result.stdout.strip()) if page_size_result.returncode == 0 else 16384
+
+        # Calculate used and free
+        free_pages = stats.get("Pages free", 0)
+        inactive_pages = stats.get("Pages inactive", 0)
+        speculative_pages = stats.get("Pages speculative", 0)
+
+        # Free = free + inactive + speculative (reclaimable)
+        free_mb = (free_pages + inactive_pages + speculative_pages) * page_size // (1024 * 1024)
+        used_mb = total_mb - free_mb
+
+        return (total_mb, used_mb, free_mb)
+    except Exception:
+        return None

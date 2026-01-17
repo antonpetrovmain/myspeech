@@ -11,7 +11,7 @@ from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
-from myspeech.server import ServerManager
+from myspeech.server import ServerManager, get_system_memory
 
 
 class MySpeechApp:
@@ -67,6 +67,12 @@ class MySpeechApp:
         else:
             print("No transcription result.")
             self._clipboard.restore()
+
+        # Show system memory after transcription
+        mem = get_system_memory()
+        if mem:
+            total, used, free = mem
+            print(f"RAM: {used:,} MB used / {free:,} MB free / {total:,} MB total")
 
     def _on_open_recording(self):
         recording_path = "/tmp/myspeech_recording.wav"
