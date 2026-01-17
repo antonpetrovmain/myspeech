@@ -1,5 +1,7 @@
 import subprocess
 
+import config
+
 
 class ClipboardManager:
     def __init__(self):
@@ -32,7 +34,7 @@ class ClipboardManager:
                 # Activate the app using bundle identifier and paste
                 script = f'''
                     tell application id "{self._saved_app}" to activate
-                    delay 0.3
+                    delay {config.PASTE_DELAY}
                     tell application "System Events" to keystroke "v" using command down
                 '''
                 subprocess.run(

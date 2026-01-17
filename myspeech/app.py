@@ -3,6 +3,9 @@ import threading
 import signal
 import sys
 
+import sounddevice as sd
+
+import config
 from myspeech.recorder import Recorder
 from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener
@@ -34,7 +37,6 @@ class MySpeechApp:
             def show_popup():
                 self._popup.show()
 
-            import config
             self._popup.schedule_delayed(config.POPUP_DELAY_MS, show_popup)
 
         self._popup.schedule(do_start)
@@ -85,7 +87,6 @@ class MySpeechApp:
         print("  Ctrl+C: Quit")
 
         # Show available audio input devices
-        import sounddevice as sd
         print("\nAvailable input devices:")
         devices = sd.query_devices()
         for i, d in enumerate(devices):

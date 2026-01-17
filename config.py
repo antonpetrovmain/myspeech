@@ -7,7 +7,7 @@ MLX_SERVER_URL = "http://localhost:10240/v1"
 SAMPLE_RATE = 16000
 CHANNELS = 1
 AUDIO_DEVICE = None  # Set to device index (e.g., 4) or name, or None for default
-DEBUG_SAVE_AUDIO = True  # Save recordings to /tmp/myspeech_recording.wav for debugging
+DEBUG_SAVE_AUDIO = False  # Save recordings to /tmp/myspeech_recording.wav for debugging
 
 # Hotkey (key codes detected on this system)
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
