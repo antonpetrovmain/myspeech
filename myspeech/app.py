@@ -1,3 +1,4 @@
+import os
 import subprocess
 import threading
 import signal
@@ -68,12 +69,29 @@ class MySpeechApp:
             print("No transcription result.")
             self._clipboard.restore()
 
-        # Show system memory after transcription
+        # Show memory stats after transcription
+        server_mb = self._server.get_memory_mb() or 0
+        app_mb = self._get_app_memory_mb()
         mem = get_system_memory()
         if mem:
             total, used, free = mem
             used_pct = used * 100 // total
-            print(f"RAM: {used_pct}% used ({used:,} / {total:,} MB)")
+            print(f"RAM: {used_pct}% ({used:,} / {total:,} MB) | App: {app_mb} MB | MLX: {server_mb:,} MB")
+
+    def _get_app_memory_mb(self) -> int:
+        """Get memory usage of this process in MB."""
+        try:
+            pid = os.getpid()
+            result = subprocess.run(
+                ["ps", "-o", "rss=", "-p", str(pid)],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return int(result.stdout.strip()) // 1024
+        except Exception:
+            pass
+        return 0
 
     def _on_open_recording(self):
         try:
@@ -89,9 +107,9 @@ class MySpeechApp:
 
         # Display server info
         print(f"Model: {config.WHISPER_MODEL}")
-        memory_mb = self._server.get_memory_mb()
-        if memory_mb:
-            print(f"Server memory: {memory_mb} MB")
+        server_mb = self._server.get_memory_mb() or 0
+        app_mb = self._get_app_memory_mb()
+        print(f"Memory: App {app_mb} MB | MLX {server_mb:,} MB")
 
         print("\nMySpeech started.")
         print("  Cmd+Ctrl+T: Hold to record, release to transcribe")
