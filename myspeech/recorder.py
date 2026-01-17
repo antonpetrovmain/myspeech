@@ -79,10 +79,9 @@ class Recorder:
 
         wav_bytes = buffer.getvalue()
 
-        # Save to file for debugging (before level check)
-        if getattr(config, 'DEBUG_SAVE_AUDIO', False):
-            debug_path = "/tmp/myspeech_recording.wav"
-            with open(debug_path, "wb") as f:
+        # Save recording to file (before level check, so we can review failed recordings)
+        if getattr(config, 'SAVE_RECORDING', False):
+            with open("/tmp/myspeech_recording.wav", "wb") as f:
                 f.write(wav_bytes)
 
         # Skip if too short or silent

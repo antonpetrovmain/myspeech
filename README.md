@@ -6,6 +6,7 @@ A macOS speech-to-text application using [mlx-audio](https://github.com/Blaizzy/
 
 - **Global Hotkey**: Hold Cmd+Ctrl+T to record, release to transcribe
 - **Auto-paste**: Transcription is automatically pasted into your active application
+- **Playback**: Press Cmd+Ctrl+R to open and replay your last recording
 - **Local Processing**: Uses Whisper via mlx-audio (no cloud API needed)
 - **Auto-start Server**: Automatically starts mlx-audio server if not running
 - **Visual Feedback**: Red popup indicates when recording is active
@@ -49,12 +50,9 @@ source .venv/bin/activate
 python main.py
 ```
 
-1. Press and hold **Cmd+Ctrl+T**
-2. Speak when the red "Recording..." popup appears
-3. Release the keys
-4. Text is automatically pasted into your active application
-
-Press **Ctrl+C** to quit.
+- **Cmd+Ctrl+T** (hold): Record and transcribe
+- **Cmd+Ctrl+R**: Open last recording in default audio player
+- **Ctrl+C**: Quit
 
 ## Configuration
 
@@ -72,8 +70,8 @@ AUDIO_DEVICE = None  # Set to device index or None for default
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
 HOTKEY_KEY_CODE = 3  # T key
 
-# Debug
-DEBUG_SAVE_AUDIO = False  # Save recordings to /tmp/myspeech_recording.wav
+# Recording
+SAVE_RECORDING = True  # Save last recording for playback with Cmd+Ctrl+R
 ```
 
 ## Troubleshooting
@@ -86,7 +84,7 @@ brew install python-tk@3.13
 ### Recording shows "Audio level too low"
 - Check microphone permissions in System Settings
 - Set `AUDIO_DEVICE` to a specific device index in config.py
-- Enable `DEBUG_SAVE_AUDIO` and check the saved recording
+- Use Cmd+Ctrl+R to listen to the saved recording
 
 ### Hotkey not detected
 - Ensure Accessibility permission is granted for your terminal app

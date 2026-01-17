@@ -43,4 +43,4 @@ python main.py
 - Hotkeys use virtual key codes (`key.vk`) not characters, making them keyboard-layout independent
 - Audio recordings rejected if < 0.5 seconds or audio level < 100 (prevents silent recordings)
 - On record start: saves frontmost app bundle ID. On stop: transcribes, sets clipboard, restores focus, pastes via Cmd+V
-- Set `DEBUG_SAVE_AUDIO = True` in config to save recordings to `/tmp/myspeech_recording.wav`
+- Set `SAVE_RECORDING = True` in config to save recordings to `/tmp/myspeech_recording.wav` (use Cmd+Ctrl+R to open)
