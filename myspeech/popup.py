@@ -1,3 +1,5 @@
+import os
+import subprocess
 import tkinter as tk
 from typing import Callable
 
@@ -46,6 +48,13 @@ class RecordingPopup:
         if self._root:
             self._root.deiconify()
             self._root.lift()
+            self._root.focus_force()
+            # Activate this app on macOS to steal focus from terminal
+            pid = os.getpid()
+            subprocess.run(
+                ["osascript", "-e", f'tell application "System Events" to set frontmost of first process whose unix id is {pid} to true'],
+                capture_output=True,
+            )
 
     def hide(self):
         if self._root and self._visible:
