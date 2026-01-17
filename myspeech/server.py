@@ -53,8 +53,9 @@ class ServerManager:
             self._process = None
 
     def get_memory_mb(self) -> int | None:
-        """Get memory usage of mlx_audio.server process in MB."""
+        """Get memory usage of mlx_audio.server and its child processes in MB."""
         try:
+            # Find main server process
             result = subprocess.run(
                 ["pgrep", "-f", "mlx_audio.server"],
                 capture_output=True,
@@ -63,18 +64,41 @@ class ServerManager:
             if result.returncode != 0:
                 return None
 
-            pids = result.stdout.strip().split("\n")
+            parent_pids = [p for p in result.stdout.strip().split("\n") if p]
+            all_pids = set(parent_pids)
+
+            # Find all child processes recursively
+            def get_children(pid: str) -> list[str]:
+                result = subprocess.run(
+                    ["pgrep", "-P", pid],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    return [p for p in result.stdout.strip().split("\n") if p]
+                return []
+
+            to_check = list(parent_pids)
+            while to_check:
+                pid = to_check.pop()
+                children = get_children(pid)
+                for child in children:
+                    if child not in all_pids:
+                        all_pids.add(child)
+                        to_check.append(child)
+
+            # Sum memory of all processes
             total_mb = 0
-            for pid in pids:
-                if pid:
-                    ps_result = subprocess.run(
-                        ["ps", "-o", "rss=", "-p", pid],
-                        capture_output=True,
-                        text=True,
-                    )
-                    if ps_result.returncode == 0:
-                        rss_kb = int(ps_result.stdout.strip())
-                        total_mb += rss_kb // 1024
+            for pid in all_pids:
+                ps_result = subprocess.run(
+                    ["ps", "-o", "rss=", "-p", pid],
+                    capture_output=True,
+                    text=True,
+                )
+                if ps_result.returncode == 0 and ps_result.stdout.strip():
+                    rss_kb = int(ps_result.stdout.strip())
+                    total_mb += rss_kb // 1024
+
             return total_mb if total_mb > 0 else None
         except Exception:
             return None
