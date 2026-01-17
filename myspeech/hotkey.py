@@ -1,8 +1,11 @@
 import threading
+import time
 from typing import Callable
 from pynput import keyboard
 
 import config
+
+DEBOUNCE_SECONDS = 0.5
 
 
 class HotkeyListener:
@@ -18,6 +21,7 @@ class HotkeyListener:
         self._pressed_modifiers: set[str] = set()
         self._pressed_key_codes: set[int] = set()
         self._hotkey_active = False
+        self._last_record_end: float = 0
         self._lock = threading.Lock()
         self._listener: keyboard.Listener | None = None
 
@@ -70,6 +74,10 @@ class HotkeyListener:
                 threading.Thread(target=self._on_open_recording, daemon=True).start()
                 return
 
+            # Debounce: ignore if too soon after last recording
+            if time.time() - self._last_record_end < DEBOUNCE_SECONDS:
+                return
+
             if not self._hotkey_active and self._check_record_hotkey():
                 self._hotkey_active = True
                 threading.Thread(target=self._on_record_start, daemon=True).start()
@@ -86,6 +94,7 @@ class HotkeyListener:
 
             if self._hotkey_active and not self._check_record_hotkey():
                 self._hotkey_active = False
+                self._last_record_end = time.time()
                 threading.Thread(target=self._on_record_stop, daemon=True).start()
 
     def start(self):
