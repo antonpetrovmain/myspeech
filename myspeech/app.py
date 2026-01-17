@@ -70,6 +70,10 @@ class MySpeechApp:
             self._clipboard.restore()
 
         # Show memory stats after transcription
+        self._print_memory_stats()
+
+    def _print_memory_stats(self):
+        """Print current memory usage stats."""
         server_mb = self._server.get_memory_mb() or 0
         app_mb = self._get_app_memory_mb()
         mem = get_system_memory()
@@ -107,9 +111,7 @@ class MySpeechApp:
 
         # Display server info
         print(f"Model: {config.WHISPER_MODEL}")
-        server_mb = self._server.get_memory_mb() or 0
-        app_mb = self._get_app_memory_mb()
-        print(f"Memory: App {app_mb} MB | MLX {server_mb:,} MB")
+        self._print_memory_stats()
 
         print("\nMySpeech started.")
         print("  Cmd+Ctrl+T: Hold to record, release to transcribe")
