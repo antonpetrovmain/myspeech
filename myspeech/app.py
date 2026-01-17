@@ -31,7 +31,7 @@ class MySpeechApp:
         def do_start():
             with self._lock:
                 self._recorder.start()
-            self._popup.show()
+            self._popup.schedule_delayed(150, self._popup.show)
 
         self._popup.schedule(do_start)
 
