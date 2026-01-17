@@ -1,4 +1,3 @@
-import json
 import subprocess
 import time
 import urllib.request
@@ -52,17 +51,6 @@ class ServerManager:
             except subprocess.TimeoutExpired:
                 self._process.kill()
             self._process = None
-
-    def get_models(self) -> list[str]:
-        """Get list of loaded model IDs from the server."""
-        try:
-            url = f"{config.MLX_AUDIO_SERVER_URL}/models"
-            req = urllib.request.Request(url, method="GET")
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode())
-                return [m["id"] for m in data.get("data", [])]
-        except Exception:
-            return []
 
     def get_memory_mb(self) -> int | None:
         """Get memory usage of mlx_audio.server process in MB."""

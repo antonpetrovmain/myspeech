@@ -82,10 +82,8 @@ class MySpeechApp:
             sys.exit(1)
 
         # Display server info
-        models = self._server.get_models()
+        print(f"Model: {config.WHISPER_MODEL}")
         memory_mb = self._server.get_memory_mb()
-        if models:
-            print(f"Model: {models[0]}")
         if memory_mb:
             print(f"Server memory: {memory_mb} MB")
 
