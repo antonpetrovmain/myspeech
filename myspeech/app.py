@@ -12,7 +12,7 @@ from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
-from myspeech.server import ServerManager, get_system_memory
+from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb
 
 
 class MySpeechApp:
@@ -75,27 +75,12 @@ class MySpeechApp:
     def _print_memory_stats(self):
         """Print current memory usage stats."""
         server_mb = self._server.get_memory_mb() or 0
-        app_mb = self._get_app_memory_mb()
+        app_mb = get_process_memory_mb(os.getpid())
         mem = get_system_memory()
         if mem:
             total, used, free = mem
             used_pct = used * 100 // total
             print(f"RAM: {used_pct}% ({used:,} / {total:,} MB) | App: {app_mb} MB | MLX: {server_mb:,} MB")
-
-    def _get_app_memory_mb(self) -> int:
-        """Get memory usage of this process in MB."""
-        try:
-            pid = os.getpid()
-            result = subprocess.run(
-                ["ps", "-o", "rss=", "-p", str(pid)],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return int(result.stdout.strip()) // 1024
-        except Exception:
-            pass
-        return 0
 
     def _on_open_recording(self):
         try:

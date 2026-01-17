@@ -104,6 +104,21 @@ class ServerManager:
             return None
 
 
+def get_process_memory_mb(pid: int) -> int:
+    """Get memory usage of a process in MB."""
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "rss=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return int(result.stdout.strip()) // 1024
+    except Exception:
+        pass
+    return 0
+
+
 def get_system_memory() -> tuple[int, int, int] | None:
     """Get system memory stats: (total_mb, used_mb, free_mb)."""
     try:
