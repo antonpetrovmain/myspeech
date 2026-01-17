@@ -43,8 +43,10 @@ class ClipboardManager:
                     timeout=3,
                 )
 
+            self._saved_app = None
             return process.returncode == 0
         except Exception:
+            self._saved_app = None
             return False
 
     def restore(self):

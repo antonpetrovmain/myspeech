@@ -16,8 +16,6 @@ class Recorder:
         self._recording = False
 
     def _audio_callback(self, indata: np.ndarray, frames: int, time_info, status):
-        if status:
-            pass  # Ignore status errors silently
         with self._lock:
             if self._recording:
                 self._frames.append(indata.copy())

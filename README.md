@@ -27,7 +27,7 @@ brew install python-tk@3.13  # or python-tk@3.12
 ### 2. Clone and install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/antonpetrovmain/myspeech.git
 cd myspeech
 
 # Create virtual environment and install
