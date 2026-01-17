@@ -1,3 +1,5 @@
+import os
+import subprocess
 import tkinter as tk
 from typing import Callable
 
@@ -14,6 +16,7 @@ class RecordingPopup:
         self._root.overrideredirect(True)  # Borderless
         self._root.attributes("-topmost", True)  # Always on top
         self._root.attributes("-alpha", 0.9)  # Slight transparency
+        self._root.wm_attributes("-transparent", True)  # For macOS
 
         # Position in top-right corner
         screen_width = self._root.winfo_screenwidth()
@@ -46,7 +49,13 @@ class RecordingPopup:
         if self._root:
             self._root.deiconify()
             self._root.lift()
-            self._root.focus_force()  # Take focus to capture key events
+            self._root.focus_force()
+            # Activate this app on macOS to steal focus from terminal
+            pid = os.getpid()
+            subprocess.run(
+                ["osascript", "-e", f'tell application "System Events" to set frontmost of first process whose unix id is {pid} to true'],
+                capture_output=True,
+            )
 
     def hide(self):
         if self._root and self._visible:
