@@ -72,7 +72,8 @@ class MySpeechApp:
         mem = get_system_memory()
         if mem:
             total, used, free = mem
-            print(f"RAM: {used:,} MB used / {free:,} MB free / {total:,} MB total")
+            used_pct = used * 100 // total
+            print(f"RAM: {used_pct}% used ({used:,} / {total:,} MB)")
 
     def _on_open_recording(self):
         try:
