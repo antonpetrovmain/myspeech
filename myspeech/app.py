@@ -58,11 +58,14 @@ class MySpeechApp:
         self._popup.schedule(self._popup.hide)
 
     def _process_transcription(self, audio_bytes: bytes):
+        print("Transcribing...")
         text = self._transcriber.transcribe(audio_bytes)
 
         if text:
+            print(f"Result: {text}")
             self._clipboard.set_and_paste(text)
         else:
+            print("No transcription result.")
             self._clipboard.restore()
 
     def _on_open_recording(self):
@@ -78,7 +81,15 @@ class MySpeechApp:
             print("Cannot start without mlx-audio server. Exiting.")
             sys.exit(1)
 
-        print("MySpeech started.")
+        # Display server info
+        models = self._server.get_models()
+        memory_mb = self._server.get_memory_mb()
+        if models:
+            print(f"Model: {models[0]}")
+        if memory_mb:
+            print(f"Server memory: {memory_mb} MB")
+
+        print("\nMySpeech started.")
         print("  Cmd+Ctrl+T: Hold to record, release to transcribe")
         print("  Cmd+Ctrl+R: Open last recording")
         print("  Ctrl+C: Quit")
