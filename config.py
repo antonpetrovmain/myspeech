@@ -9,9 +9,10 @@ CHANNELS = 1
 AUDIO_DEVICE = None  # Set to device index (e.g., 4) or name, or None for default
 DEBUG_SAVE_AUDIO = True  # Save recordings to /tmp/myspeech_recording.wav for debugging
 
-# Hotkey
+# Hotkey (key codes detected on this system)
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
-HOTKEY_CHAR = 'f'
+HOTKEY_KEY_CODE = 3  # T key (Cmd+Ctrl+T)
+HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key (Cmd+Ctrl+R)
 
 # Popup
 POPUP_WIDTH = 120

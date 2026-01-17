@@ -47,9 +47,7 @@ class Recorder:
                 callback=self._audio_callback,
             )
             self._stream.start()
-            print(f"[DEBUG] Recording started on device: {sd.query_devices(device if device else sd.default.device[0])['name']}")
-        except Exception as e:
-            print(f"[DEBUG] Failed to start recording: {e}")
+        except Exception:
             with self._lock:
                 self._recording = False
 
@@ -70,7 +68,6 @@ class Recorder:
         # Check minimum duration (0.5 seconds)
         duration = len(audio_data) / config.SAMPLE_RATE
         audio_level = np.abs(audio_data).mean()
-        print(f"[DEBUG] Audio duration: {duration:.2f}s, level: {audio_level:.0f}")
 
         # Convert to WAV bytes
         buffer = io.BytesIO()
@@ -87,15 +84,12 @@ class Recorder:
             debug_path = "/tmp/myspeech_recording.wav"
             with open(debug_path, "wb") as f:
                 f.write(wav_bytes)
-            print(f"[DEBUG] Saved recording to {debug_path}")
 
         # Skip if too short or silent
         if duration < 0.5:
-            print(f"[DEBUG] Recording too short: {duration:.2f}s")
             return b""
 
         if audio_level < 100:
-            print("[DEBUG] Audio level too low (silence)")
             return b""
 
         return wav_bytes

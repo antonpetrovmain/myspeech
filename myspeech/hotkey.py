@@ -10,26 +10,18 @@ class HotkeyListener:
         self,
         on_record_start: Callable[[], None],
         on_record_stop: Callable[[], None],
+        on_open_recording: Callable[[], None] | None = None,
     ):
         self._on_record_start = on_record_start
         self._on_record_stop = on_record_stop
-        self._pressed_keys: set[str] = set()
+        self._on_open_recording = on_open_recording
+        self._pressed_modifiers: set[str] = set()
+        self._pressed_key_codes: set[int] = set()
         self._hotkey_active = False
         self._lock = threading.Lock()
         self._listener: keyboard.Listener | None = None
 
-    def _normalize_key(self, key) -> str | None:
-        try:
-            if hasattr(key, "char") and key.char:
-                char = key.char
-                # Handle control characters (Ctrl+letter produces chr(1-26))
-                if len(char) == 1 and ord(char) < 32:
-                    # Convert control character back to letter (Ctrl+B = chr(2) -> 'b')
-                    return chr(ord(char) + 96)
-                return char.lower()
-        except AttributeError:
-            pass
-
+    def _get_modifier(self, key) -> str | None:
         key_mapping = {
             keyboard.Key.cmd: "cmd",
             keyboard.Key.cmd_l: "cmd",
@@ -46,31 +38,53 @@ class HotkeyListener:
         }
         return key_mapping.get(key)
 
-    def _check_hotkey(self) -> bool:
-        required = config.HOTKEY_MODIFIERS | {config.HOTKEY_CHAR}
-        return required <= self._pressed_keys
+    def _get_key_code(self, key) -> int | None:
+        # Get the virtual key code (layout-independent)
+        if hasattr(key, 'vk') and key.vk is not None:
+            return key.vk
+        return None
+
+    def _check_modifiers(self) -> bool:
+        return config.HOTKEY_MODIFIERS <= self._pressed_modifiers
+
+    def _check_record_hotkey(self) -> bool:
+        return self._check_modifiers() and config.HOTKEY_KEY_CODE in self._pressed_key_codes
+
+    def _check_open_recording_hotkey(self) -> bool:
+        if not hasattr(config, 'HOTKEY_OPEN_RECORDING_KEY_CODE'):
+            return False
+        return self._check_modifiers() and config.HOTKEY_OPEN_RECORDING_KEY_CODE in self._pressed_key_codes
 
     def _on_press(self, key):
-        normalized = self._normalize_key(key)
-        if not normalized:
-            return
+        modifier = self._get_modifier(key)
+        key_code = self._get_key_code(key)
 
         with self._lock:
-            self._pressed_keys.add(normalized)
+            if modifier:
+                self._pressed_modifiers.add(modifier)
+            if key_code is not None:
+                self._pressed_key_codes.add(key_code)
 
-            if not self._hotkey_active and self._check_hotkey():
+            # Check open recording hotkey first (single press, not hold)
+            if self._on_open_recording and self._check_open_recording_hotkey():
+                threading.Thread(target=self._on_open_recording, daemon=True).start()
+                return
+
+            if not self._hotkey_active and self._check_record_hotkey():
                 self._hotkey_active = True
                 threading.Thread(target=self._on_record_start, daemon=True).start()
 
     def _on_release(self, key):
-        normalized = self._normalize_key(key)
-        if not normalized:
-            return
+        modifier = self._get_modifier(key)
+        key_code = self._get_key_code(key)
 
         with self._lock:
-            self._pressed_keys.discard(normalized)
+            if modifier:
+                self._pressed_modifiers.discard(modifier)
+            if key_code is not None:
+                self._pressed_key_codes.discard(key_code)
 
-            if self._hotkey_active and not self._check_hotkey():
+            if self._hotkey_active and not self._check_record_hotkey():
                 self._hotkey_active = False
                 threading.Thread(target=self._on_record_stop, daemon=True).start()
 

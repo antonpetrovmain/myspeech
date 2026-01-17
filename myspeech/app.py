@@ -1,3 +1,4 @@
+import subprocess
 import threading
 import signal
 import sys
@@ -65,14 +66,23 @@ class MySpeechApp:
         else:
             self._clipboard.restore()
 
+    def _on_open_recording(self):
+        recording_path = "/tmp/myspeech_recording.wav"
+        try:
+            subprocess.run(["open", recording_path], check=False)
+        except Exception:
+            pass
+
     def run(self):
         # Ensure server is running
         if not self._server.start():
             print("Cannot start without mlx-omni-server. Exiting.")
             sys.exit(1)
 
-        print("MySpeech started. Press Cmd+Ctrl+T to record.")
-        print("Press Ctrl+C to quit.")
+        print("MySpeech started.")
+        print("  Cmd+Ctrl+T: Hold to record, release to transcribe")
+        print("  Cmd+Ctrl+R: Open last recording")
+        print("  Ctrl+C: Quit")
 
         # Show available audio input devices
         import sounddevice as sd
@@ -90,6 +100,7 @@ class MySpeechApp:
         self._hotkey = HotkeyListener(
             on_record_start=self._on_record_start,
             on_record_stop=self._on_record_stop,
+            on_open_recording=self._on_open_recording,
         )
         self._hotkey.start()
 

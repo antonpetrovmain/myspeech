@@ -16,10 +16,6 @@ class RecordingPopup:
         self._root.attributes("-topmost", True)  # Always on top
         self._root.attributes("-alpha", 0.9)  # Slight transparency
 
-        # Prevent window from taking focus on macOS
-        self._root.attributes("-alpha", 0.9)
-        self._root.focusmodel("passive")
-
         # Position in top-right corner
         screen_width = self._root.winfo_screenwidth()
         x = screen_width - config.POPUP_WIDTH - 20
@@ -50,9 +46,8 @@ class RecordingPopup:
     def _do_show(self):
         if self._root:
             self._root.deiconify()
-            # Prevent focus steal - lower and raise without focus
-            self._root.lower()
             self._root.lift()
+            self._root.focus_force()  # Take focus to capture key events
 
     def hide(self):
         if self._root and self._visible:
