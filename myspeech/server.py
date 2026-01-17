@@ -26,7 +26,7 @@ class ServerManager:
 
         print("Starting mlx-audio server...")
         self._process = subprocess.Popen(
-            ["mlx_audio.server", "--port", "8000"],
+            ["mlx_audio.server", "--port", "8000", "--workers", "1"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
