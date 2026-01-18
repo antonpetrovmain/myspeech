@@ -6,10 +6,11 @@ A macOS speech-to-text application using [mlx-audio](https://github.com/Blaizzy/
 
 - **Global Hotkey**: Hold Cmd+Ctrl+T to record, release to transcribe
 - **Auto-paste**: Transcription is automatically pasted into your active application
+- **Menu Bar Icon**: Shows app status with quick access to logs and quit
 - **Playback**: Press Cmd+Ctrl+R to open and replay your last recording
 - **Local Processing**: Uses Whisper via mlx-audio (no cloud API needed)
 - **Auto-start Server**: Automatically starts mlx-audio server if not running
-- **Visual Feedback**: Red popup indicates when recording is active
+- **Visual Feedback**: Yellow dot indicator when recording is active
 
 ## Requirements
 
@@ -65,7 +66,8 @@ Go to **System Settings > Privacy & Security** and enable:
 
 - **Cmd+Ctrl+T** (hold): Record and transcribe
 - **Cmd+Ctrl+R**: Open last recording in default audio player
-- **Logs**: `~/Library/Logs/MySpeech.log` (packaged app only)
+- **Menu Bar**: Click the icon for quick access to logs, last recording, and quit
+- **Logs**: `~/Library/Logs/MySpeech.log`
 
 ## Building the App
 
