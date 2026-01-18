@@ -21,12 +21,10 @@ HOTKEY_KEY_CODE = 3  # T key (Cmd+Ctrl+T)
 HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key (Cmd+Ctrl+R)
 HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
 
-# Popup
-POPUP_WIDTH = 120
-POPUP_HEIGHT = 40
-POPUP_BG_COLOR = "#cc0000"
-POPUP_TEXT_COLOR = "white"
-POPUP_TEXT = "Recording..."
+# Popup (recording dot indicator)
+POPUP_DOT_SIZE = 16
+POPUP_DOT_COLOR = "#ffcc00"
+POPUP_DOT_ALPHA = 0.7
 
 # Clipboard
 PASTE_DELAY = 0.1  # seconds to wait before pasting

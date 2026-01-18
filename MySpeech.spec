@@ -31,7 +31,6 @@ a = Analysis(
         'openai.resources',
         'openai.resources.audio',
         'openai.resources.audio.transcriptions',
-        'rumps',
     ],
     hookspath=[],
     hooksconfig={},
@@ -96,8 +95,8 @@ app = BUNDLE(
     info_plist={
         'CFBundleName': 'MySpeech',
         'CFBundleDisplayName': 'MySpeech',
-        'CFBundleVersion': '0.2.0',
-        'CFBundleShortVersionString': '0.2.0',
+        'CFBundleVersion': '0.2.1',
+        'CFBundleShortVersionString': '0.2.1',
         'LSMinimumSystemVersion': '13.0',
         'NSMicrophoneUsageDescription': 'MySpeech needs microphone access to record your voice for transcription.',
         'NSAppleEventsUsageDescription': 'MySpeech needs automation access to paste transcribed text.',
