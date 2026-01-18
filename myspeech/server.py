@@ -1,7 +1,9 @@
+import shutil
 import subprocess
 import time
 import urllib.request
 import urllib.error
+from pathlib import Path
 
 import config
 
@@ -19,14 +21,43 @@ class ServerManager:
         except (urllib.error.URLError, TimeoutError):
             return False
 
+    def _find_server_command(self) -> str | None:
+        """Find mlx_audio.server in PATH or common locations."""
+        # Check PATH first
+        server_path = shutil.which("mlx_audio.server")
+        if server_path:
+            return server_path
+
+        # Check common venv locations
+        home = Path.home()
+        search_paths = [
+            home / "source/myspeech/.venv/bin/mlx_audio.server",
+            home / ".venv/bin/mlx_audio.server",
+            Path("/opt/homebrew/bin/mlx_audio.server"),
+        ]
+
+        for path in search_paths:
+            if path.exists():
+                return str(path)
+
+        return None
+
     def start(self, timeout: int = 120) -> bool:
         if self.is_running():
             print("mlx-audio server already running.")
             return True
 
-        print("Starting mlx-audio server...")
+        server_cmd = self._find_server_command()
+        if not server_cmd:
+            print("Error: mlx_audio.server not found.")
+            print("Please start the server manually:")
+            print("  source ~/source/myspeech/.venv/bin/activate")
+            print("  mlx_audio.server --port 8000")
+            return False
+
+        print(f"Starting mlx-audio server from {server_cmd}...")
         self._process = subprocess.Popen(
-            ["mlx_audio.server", "--port", "8000", "--workers", "1"],
+            [server_cmd, "--port", "8000", "--workers", "1"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
