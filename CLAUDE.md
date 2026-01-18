@@ -9,10 +9,10 @@ MySpeech is a macOS speech-to-text app using mlx-audio on Apple Silicon. Hold a 
 ## Commands
 
 ```bash
-# Setup
-python3.13 -m venv .venv
+# Setup (using uv)
+uv venv .venv
 source .venv/bin/activate
-pip install -e .
+uv pip install -e .
 
 # Run
 python main.py
@@ -25,7 +25,7 @@ python main.py
 **Components** (all in `myspeech/`):
 - `app.py` - Main orchestrator, coordinates all components, handles hotkey callbacks
 - `server.py` - Manages mlx-audio server lifecycle (auto-starts if needed)
-- `hotkey.py` - Global hotkey detection using pynput (uses virtual key codes for layout independence)
+- `hotkey.py` - Global hotkey detection using pynput with `darwin_intercept` for key suppression
 - `recorder.py` - Audio capture via sounddevice with callback streaming, outputs WAV bytes
 - `transcriber.py` - Sends audio to mlx-audio server using OpenAI-compatible API
 - `clipboard.py` - Saves frontmost app, sets clipboard via pbcopy, pastes via AppleScript
@@ -41,6 +41,7 @@ python main.py
 ## Key Implementation Details
 
 - Hotkeys use virtual key codes (`key.vk`) not characters, making them keyboard-layout independent
+- `darwin_intercept` callback (using Quartz CGEvents) suppresses hotkey keys to prevent them leaking to other apps
 - Audio recordings rejected if < 0.5 seconds or audio level < 100 (prevents silent recordings)
 - On record start: saves frontmost app bundle ID. On stop: transcribes, sets clipboard, restores focus, pastes via Cmd+V
 - Set `SAVE_RECORDING = True` in config to save recordings to `/tmp/myspeech_recording.wav` (use Cmd+Ctrl+R to open)

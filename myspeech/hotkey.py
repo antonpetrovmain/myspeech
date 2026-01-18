@@ -1,6 +1,8 @@
 import threading
 import time
 from typing import Callable
+
+import Quartz
 from pynput import keyboard
 
 import config
@@ -117,10 +119,28 @@ class HotkeyListener:
                 if self._on_keys_released:
                     threading.Thread(target=self._on_keys_released, daemon=True).start()
 
+    def _create_darwin_intercept(self):
+        """Create callback to suppress hotkey keys at system level."""
+        def darwin_intercept(event_type, event):
+            key_code = Quartz.CGEventGetIntegerValueField(
+                event, Quartz.kCGKeyboardEventKeycode
+            )
+
+            # Suppress T and R keys while our hotkey is active or waiting for release
+            with self._lock:
+                if self._hotkey_active or self._waiting_for_release:
+                    if key_code in (config.HOTKEY_KEY_CODE, config.HOTKEY_OPEN_RECORDING_KEY_CODE):
+                        return None  # Suppress
+
+            return event  # Pass through
+
+        return darwin_intercept
+
     def start(self):
         self._listener = keyboard.Listener(
             on_press=self._on_press,
             on_release=self._on_release,
+            darwin_intercept=self._create_darwin_intercept(),
         )
         self._listener.start()
 
