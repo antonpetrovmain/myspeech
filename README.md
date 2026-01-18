@@ -18,45 +18,76 @@ A macOS speech-to-text application using [mlx-audio](https://github.com/Blaizzy/
 
 ## Installation
 
-### 1. Install tkinter
+### Option 1: Pre-built macOS App (Recommended)
 
-```bash
-brew install python-tk@3.13  # or python-tk@3.12
-```
+The easiest way to use MySpeech:
 
-### 2. Clone and install
+1. Download `MySpeech.app` from the latest release or [build it yourself](#building-the-app)
+2. Copy to Applications folder:
+   ```bash
+   cp -r MySpeech.app /Applications/
+   ```
+3. Launch from Applications and grant permissions (see below)
 
-```bash
-git clone https://github.com/antonpetrovmain/myspeech.git
-cd myspeech
+### Option 2: Development Setup
 
-# Create virtual environment and install
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
+For development or if you want to run from source:
 
-### 3. Grant macOS Permissions
+1. **Install tkinter**
+   ```bash
+   brew install python-tk@3.13  # or python-tk@3.12
+   ```
+
+2. **Clone and install**
+   ```bash
+   git clone https://github.com/antonpetrovmain/myspeech.git
+   cd myspeech
+
+   # Create virtual environment with uv
+   uv venv .venv
+   source .venv/bin/activate
+   uv pip install -e .
+   ```
+
+3. **Run the app**
+   ```bash
+   python main.py
+   ```
+
+### macOS Permissions
 
 Go to **System Settings > Privacy & Security** and enable:
 
-1. **Accessibility**: Add your terminal app (Terminal, iTerm2, WezTerm, etc.)
-2. **Microphone**: Add your terminal app
+1. **Accessibility**: Add MySpeech.app (or your terminal app if running from source)
+2. **Microphone**: Add MySpeech.app (or your terminal app)
 
 ## Usage
 
-```bash
-source .venv/bin/activate
-python main.py
-```
-
 - **Cmd+Ctrl+T** (hold): Record and transcribe
 - **Cmd+Ctrl+R**: Open last recording in default audio player
-- **Ctrl+C**: Quit
+- **Logs**: `~/Library/Logs/MySpeech.log` (packaged app only)
+
+## Building the App
+
+To create your own `MySpeech.app`:
+
+```bash
+# Setup
+uv venv .venv
+source .venv/bin/activate
+uv pip install -e .
+uv pip install pyinstaller
+
+# Build
+pyinstaller MySpeech.spec --clean
+
+# Result: dist/MySpeech.app
+cp -r dist/MySpeech.app /Applications/
+```
 
 ## Configuration
 
-Edit `config.py` to customize settings:
+Edit `config.py` to customize:
 
 ```python
 # Server
@@ -65,37 +96,47 @@ WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
 
 # Audio
 AUDIO_DEVICE = None  # Set to device index or None for default
+MIN_RECORDING_DURATION = 0.5  # Minimum seconds to accept
+MIN_AUDIO_LEVEL = 100  # Minimum audio level threshold
 
-# Hotkey (virtual key codes)
+# Hotkey
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
 HOTKEY_KEY_CODE = 3  # T key
+HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
 
 # Recording
-SAVE_RECORDING = True  # Save last recording for playback with Cmd+Ctrl+R
+SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
 ```
 
 ## Troubleshooting
 
-### "No module named '_tkinter'"
+### Hotkey not working
+- Grant **Accessibility** permission: System Settings > Privacy & Security > Accessibility > Add MySpeech.app
+- Check logs: `tail -f ~/Library/Logs/MySpeech.log`
+
+### No recording captured
+- Grant **Microphone** permission in System Settings
+- Check audio input device: `python -c "import sounddevice; print(sounddevice.query_devices())"`
+- Adjust `MIN_AUDIO_LEVEL` in config.py if microphone is quiet
+
+### Transcription shows wrong text
+- Audio may be too short or quiet - Whisper can hallucinate on silence
+- Speak clearly and close to microphone
+- Check `MIN_RECORDING_DURATION` and `MIN_AUDIO_LEVEL` in config.py
+
+### "Read-only file system" error on app launch
+- This is fixed in the latest version. Rebuild with: `pyinstaller MySpeech.spec --clean -y`
+
+### Server fails to start
+- First run downloads the Whisper model (~1.5GB) - wait 2-3 minutes
+- Check server logs: `tail -f ~/Library/Logs/MySpeech-server.log`
+- Verify port 8000 is not in use: `lsof -i :8000`
+- Start manually: `source .venv/bin/activate && mlx_audio.server --port 8000`
+
+### "No module named '_tkinter'" (development only)
 ```bash
 brew install python-tk@3.13
 ```
-
-### Recording shows "Audio level too low"
-- Check microphone permissions in System Settings
-- Set `AUDIO_DEVICE` to a specific device index in config.py
-- Use Cmd+Ctrl+R to listen to the saved recording
-
-### Hotkey not detected
-- Ensure Accessibility permission is granted for your terminal app
-
-### Transcription returns wrong text
-- Audio may be too short or quiet - Whisper can hallucinate on silence
-- Ensure microphone is working and speak clearly
-
-### Server fails to start
-- First run downloads the Whisper model (~1.5GB)
-- Check that port 8000 is not in use
 
 ## License
 
