@@ -83,10 +83,10 @@ class Recorder:
                 f.write(wav_bytes)
 
         # Skip if too short or silent
-        if duration < 0.5:
+        if duration < config.MIN_RECORDING_DURATION:
             return b""
 
-        if audio_level < 100:
+        if audio_level < config.MIN_AUDIO_LEVEL:
             return b""
 
         return wav_bytes

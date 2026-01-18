@@ -12,6 +12,8 @@ CHANNELS = 1
 AUDIO_DEVICE = None  # Set to device index (e.g., 4) or name, or None for default
 SAVE_RECORDING = True  # Save last recording for playback
 RECORDING_PATH = "/tmp/myspeech_recording.wav"
+MIN_RECORDING_DURATION = 0.5  # Minimum seconds to accept recording
+MIN_AUDIO_LEVEL = 100  # Minimum audio level to accept (prevents silent recordings)
 
 # Hotkey (key codes detected on this system)
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
