@@ -30,6 +30,7 @@ from myspeech.hotkey import HotkeyListener
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
 from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb
+from myspeech.menubar import MenuBar
 
 
 class MySpeechApp:
@@ -39,6 +40,7 @@ class MySpeechApp:
         self._transcriber = Transcriber()
         self._popup = RecordingPopup()
         self._clipboard = ClipboardManager()
+        self._menubar: MenuBar | None = None
         self._hotkey: HotkeyListener | None = None
         self._lock = threading.Lock()
 
@@ -49,6 +51,9 @@ class MySpeechApp:
         def do_start():
             with self._lock:
                 self._recorder.start()
+            # Update menu bar to show recording status
+            if self._menubar:
+                self._menubar.set_recording(True)
             self._popup.schedule_delayed(150, self._popup.show)
 
         self._popup.schedule(do_start)
@@ -58,16 +63,20 @@ class MySpeechApp:
             with self._lock:
                 audio_bytes = self._recorder.stop()
 
-                if not audio_bytes:
-                    self._clipboard.restore()
-                    return
+            # Update menu bar to show not recording
+            if self._menubar:
+                self._menubar.set_recording(False)
 
-                # Transcribe in background to not block
-                threading.Thread(
-                    target=self._process_transcription,
-                    args=(audio_bytes,),
-                    daemon=True,
-                ).start()
+            if not audio_bytes:
+                self._clipboard.restore()
+                return
+
+            # Transcribe in background to not block
+            threading.Thread(
+                target=self._process_transcription,
+                args=(audio_bytes,),
+                daemon=True,
+            ).start()
 
         self._popup.schedule(do_stop)
 
@@ -124,6 +133,15 @@ class MySpeechApp:
 
         # Setup tkinter on main thread
         root = self._popup.setup()
+
+        # Create menu bar (setup deferred to after mainloop starts)
+        self._menubar = MenuBar(self)
+
+        def setup_menubar():
+            self._menubar.setup(quit_callback=self._popup.stop)
+
+        # Defer menu bar setup to run within tkinter's event loop
+        root.after(100, setup_menubar)
 
         # Start hotkey listener in background thread
         self._hotkey = HotkeyListener(

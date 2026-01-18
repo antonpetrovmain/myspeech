@@ -15,6 +15,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('config.py', '.'),
+        ('resources/menubar_icon.png', 'resources'),
     ],
     hiddenimports=[
         'pynput.keyboard._darwin',
@@ -30,6 +31,7 @@ a = Analysis(
         'openai.resources',
         'openai.resources.audio',
         'openai.resources.audio.transcriptions',
+        'rumps',
     ],
     hookspath=[],
     hooksconfig={},
