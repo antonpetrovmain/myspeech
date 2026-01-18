@@ -7,10 +7,23 @@ from pynput import keyboard
 
 import config
 
-DEBOUNCE_SECONDS = 0.5
-
 
 class HotkeyListener:
+    _MODIFIER_MAP = {
+        keyboard.Key.cmd: "cmd",
+        keyboard.Key.cmd_l: "cmd",
+        keyboard.Key.cmd_r: "cmd",
+        keyboard.Key.ctrl: "ctrl",
+        keyboard.Key.ctrl_l: "ctrl",
+        keyboard.Key.ctrl_r: "ctrl",
+        keyboard.Key.alt: "alt",
+        keyboard.Key.alt_l: "alt",
+        keyboard.Key.alt_r: "alt",
+        keyboard.Key.shift: "shift",
+        keyboard.Key.shift_l: "shift",
+        keyboard.Key.shift_r: "shift",
+    }
+
     def __init__(
         self,
         on_record_start: Callable[[], None],
@@ -31,21 +44,7 @@ class HotkeyListener:
         self._listener: keyboard.Listener | None = None
 
     def _get_modifier(self, key) -> str | None:
-        key_mapping = {
-            keyboard.Key.cmd: "cmd",
-            keyboard.Key.cmd_l: "cmd",
-            keyboard.Key.cmd_r: "cmd",
-            keyboard.Key.ctrl: "ctrl",
-            keyboard.Key.ctrl_l: "ctrl",
-            keyboard.Key.ctrl_r: "ctrl",
-            keyboard.Key.alt: "alt",
-            keyboard.Key.alt_l: "alt",
-            keyboard.Key.alt_r: "alt",
-            keyboard.Key.shift: "shift",
-            keyboard.Key.shift_l: "shift",
-            keyboard.Key.shift_r: "shift",
-        }
-        return key_mapping.get(key)
+        return self._MODIFIER_MAP.get(key)
 
     def _get_key_code(self, key) -> int | None:
         # Get the virtual key code (layout-independent)
@@ -89,7 +88,7 @@ class HotkeyListener:
                 return
 
             # Debounce: ignore if too soon after last recording
-            if time.time() - self._last_record_end < DEBOUNCE_SECONDS:
+            if time.time() - self._last_record_end < config.HOTKEY_DEBOUNCE_SECONDS:
                 return
 
             if not self._hotkey_active and self._check_record_hotkey():

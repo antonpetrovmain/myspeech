@@ -19,6 +19,7 @@ MIN_AUDIO_LEVEL = 100  # Minimum audio level to accept (prevents silent recordin
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
 HOTKEY_KEY_CODE = 3  # T key (Cmd+Ctrl+T)
 HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key (Cmd+Ctrl+R)
+HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
 
 # Popup
 POPUP_WIDTH = 120
