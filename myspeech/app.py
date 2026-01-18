@@ -1,12 +1,29 @@
+import logging
 import os
 import subprocess
-import threading
-import signal
 import sys
+import signal
+import threading
+from pathlib import Path
 
 import sounddevice as sd
 
 import config
+
+# Setup logging to file for packaged app
+LOG_PATH = Path.home() / "Library/Logs/MySpeech.log"
+LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%H:%M:%S",
+    handlers=[
+        logging.FileHandler(LOG_PATH),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+log = logging.getLogger(__name__)
+
 from myspeech.recorder import Recorder
 from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener
@@ -59,27 +76,27 @@ class MySpeechApp:
         self._popup.schedule(self._popup.hide)
 
     def _process_transcription(self, audio_bytes: bytes):
-        print("Transcribing...")
+        log.info("Transcribing...")
         text = self._transcriber.transcribe(audio_bytes)
 
         if text:
-            print(f"Result: {text}")
+            log.info(f"Result: {text}")
             self._clipboard.set_and_paste(text)
         else:
-            print("No transcription result.")
+            log.warning("No transcription result.")
             self._clipboard.restore()
 
         # Show memory stats after transcription
-        self._print_memory_stats()
+        self._log_memory_stats()
 
-    def _print_memory_stats(self):
-        """Print current memory usage stats."""
+    def _log_memory_stats(self):
+        """Log current memory usage stats."""
         server_mb = self._server.get_memory_mb() or 0
         app_mb = get_process_memory_mb(os.getpid())
         mem = get_system_memory()
         if mem:
             total, used, _ = mem
-            print(f"RAM: {used * 100 // total}% ({used:,} / {total:,} MB) | App: {app_mb} MB | MLX: {server_mb:,} MB")
+            log.info(f"RAM: {used * 100 // total}% ({used:,} / {total:,} MB) | App: {app_mb} MB | MLX: {server_mb:,} MB")
 
     def _on_open_recording(self):
         try:
@@ -90,25 +107,20 @@ class MySpeechApp:
     def run(self):
         # Ensure server is running
         if not self._server.start():
-            print("Cannot start without mlx-audio server. Exiting.")
+            log.error("Cannot start without mlx-audio server. Exiting.")
             sys.exit(1)
 
         # Display server info
-        print(f"Model: {config.WHISPER_MODEL}")
-        self._print_memory_stats()
+        log.info(f"Model: {config.WHISPER_MODEL}")
+        self._log_memory_stats()
 
-        print("\nMySpeech started.")
-        print("  Cmd+Ctrl+T: Hold to record, release to transcribe")
-        print("  Cmd+Ctrl+R: Open last recording")
-        print("  Ctrl+C: Quit")
+        log.info("MySpeech started. Cmd+Ctrl+T: record, Cmd+Ctrl+R: open recording")
 
-        # Show available audio input devices
-        print("\nAvailable input devices:")
+        # Log available audio input devices
         devices = sd.query_devices()
-        for i, d in enumerate(devices):
-            if d['max_input_channels'] > 0:
-                default = " (DEFAULT)" if i == sd.default.device[0] else ""
-                print(f"  [{i}] {d['name']}{default}")
+        input_devices = [(i, d) for i, d in enumerate(devices) if d['max_input_channels'] > 0]
+        default_idx = sd.default.device[0]
+        log.info(f"Audio inputs: {len(input_devices)} devices, default: [{default_idx}]")
 
         # Setup tkinter on main thread
         root = self._popup.setup()
@@ -134,7 +146,7 @@ class MySpeechApp:
             if self._hotkey:
                 self._hotkey.stop()
             self._server.stop()
-            print("\nMySpeech stopped.")
+            log.info("MySpeech stopped.")
 
 
 def main():

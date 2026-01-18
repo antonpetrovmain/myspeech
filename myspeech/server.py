@@ -1,3 +1,5 @@
+import logging
+import os
 import shutil
 import subprocess
 import time
@@ -7,10 +9,13 @@ from pathlib import Path
 
 import config
 
+log = logging.getLogger(__name__)
+
 
 class ServerManager:
     def __init__(self):
         self._process: subprocess.Popen | None = None
+        self._server_log_file = None
 
     def is_running(self) -> bool:
         try:
@@ -44,44 +49,61 @@ class ServerManager:
 
     def start(self, timeout: int = 120) -> bool:
         if self.is_running():
-            print("mlx-audio server already running.")
+            log.info("mlx-audio server already running.")
             return True
 
         server_cmd = self._find_server_command()
         if not server_cmd:
-            print("Error: mlx_audio.server not found.")
-            print("Please start the server manually:")
-            print("  source ~/source/myspeech/.venv/bin/activate")
-            print("  mlx_audio.server --port 8000")
+            log.error("mlx_audio.server not found. Start manually: mlx_audio.server --port 8000")
             return False
 
-        print(f"Starting mlx-audio server from {server_cmd}...")
+        log.info(f"Starting mlx-audio server from {server_cmd}...")
+
+        # Set up environment for the venv where mlx_audio.server is installed
+        env = os.environ.copy()
+        server_path = Path(server_cmd)
+        venv_bin = server_path.parent
+        venv_root = venv_bin.parent
+        env["VIRTUAL_ENV"] = str(venv_root)
+        env["PATH"] = f"{venv_bin}:{env.get('PATH', '')}"
+
+        # Log server output to a file for debugging
+        server_log = Path.home() / "Library/Logs/MySpeech-server.log"
+        self._server_log_file = open(server_log, "w")
+
         self._process = subprocess.Popen(
             [server_cmd, "--port", "8000", "--workers", "1"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=self._server_log_file,
+            stderr=self._server_log_file,
+            env=env,
+            cwd=Path.home(),  # Run from home dir to avoid read-only issues
         )
 
         # Wait for server to be ready
         start_time = time.time()
         while time.time() - start_time < timeout:
             if self.is_running():
-                print("mlx-audio server started.")
+                log.info("mlx-audio server started.")
                 return True
             time.sleep(1)
 
-        print("Failed to start mlx-audio server.")
+        log.error("Failed to start mlx-audio server.")
         self.stop()
         return False
 
     def stop(self):
         if self._process:
+            log.info("Stopping mlx-audio server...")
             self._process.terminate()
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
             self._process = None
+            log.info("mlx-audio server stopped.")
+        if self._server_log_file:
+            self._server_log_file.close()
+            self._server_log_file = None
 
     def get_memory_mb(self) -> int | None:
         """Get memory usage of mlx_audio.server and its child processes in MB."""
