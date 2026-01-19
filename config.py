@@ -1,32 +1,32 @@
 # MySpeech Configuration
+# Values are loaded from ~/.config/myspeech/config.toml (created on first run)
+
+from myspeech.user_config import get
 
 # Server (mlx-audio)
-MLX_AUDIO_SERVER_URL = "http://localhost:8000/v1"
-
-# Whisper model for transcription
-WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
+MLX_AUDIO_SERVER_URL = get("server", "url", "http://localhost:8000/v1")
+WHISPER_MODEL = get("server", "model", "mlx-community/whisper-large-v3-turbo")
 
 # Audio
-SAMPLE_RATE = 16000
-CHANNELS = 1
-AUDIO_DEVICE = None  # Set to device index (e.g., 4) or name, or None for default
-SAVE_RECORDING = True  # Save last recording for playback
-RECORDING_PATH = "/tmp/myspeech_recording.wav"
-MIN_RECORDING_DURATION = 0.5  # Minimum seconds to accept recording
-MIN_AUDIO_LEVEL = 100  # Minimum audio level to accept (prevents silent recordings)
+SAMPLE_RATE = get("audio", "sample_rate", 16000)
+CHANNELS = get("audio", "channels", 1)
+_device = get("audio", "device", "default")
+AUDIO_DEVICE = None if _device == "default" else _device
+SAVE_RECORDING = get("audio", "save_recording", True)
+RECORDING_PATH = get("audio", "recording_path", "/tmp/myspeech_recording.wav")
+MIN_RECORDING_DURATION = get("audio", "min_duration", 0.5)
+MIN_AUDIO_LEVEL = get("audio", "min_level", 100)
 
-# Hotkey (macOS virtual key codes - physical positions based on QWERTY)
-# For Colemak: T=3 (QWERTY F), R=1 (QWERTY S)
-# For QWERTY: T=17, R=15
-HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
-HOTKEY_KEY_CODE = 3  # T key on Colemak (Cmd+Ctrl+T)
-HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key on Colemak (Cmd+Ctrl+R)
-HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
+# Hotkey configuration
+HOTKEY_MODIFIERS = get("hotkey", "modifiers", "cmd+ctrl")
+HOTKEY_KEY = get("hotkey", "record_key", "t")
+HOTKEY_OPEN_RECORDING_KEY = get("hotkey", "open_recording_key", "r")
+HOTKEY_DEBOUNCE_SECONDS = get("hotkey", "debounce_seconds", 0.5)
 
 # Popup (recording dot indicator)
-POPUP_DOT_SIZE = 16
-POPUP_DOT_COLOR = "#ffcc00"
-POPUP_DOT_ALPHA = 0.7
+POPUP_DOT_SIZE = get("popup", "dot_size", 16)
+POPUP_DOT_COLOR = get("popup", "dot_color", "#ffcc00")
+POPUP_DOT_ALPHA = get("popup", "dot_alpha", 0.7)
 
 # Clipboard
-PASTE_DELAY = 0.1  # seconds to wait before pasting
+PASTE_DELAY = get("clipboard", "paste_delay", 0.1)

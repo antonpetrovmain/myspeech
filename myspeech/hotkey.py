@@ -1,3 +1,5 @@
+import ctypes
+import ctypes.util
 import logging
 import threading
 import time
@@ -9,6 +11,97 @@ from pynput import keyboard
 import config
 
 log = logging.getLogger(__name__)
+
+
+def _parse_modifiers(modifier_str: str) -> set[str]:
+    """Parse modifier string like 'cmd+ctrl' into set {'cmd', 'ctrl'}."""
+    return {m.strip().lower() for m in modifier_str.split('+')}
+
+
+def _build_vk_to_char_map() -> dict[int, str]:
+    """Build a mapping of VK codes to characters using the current keyboard layout."""
+    vk_to_char = {}
+    try:
+        # Load Carbon framework for UCKeyTranslate
+        carbon_path = ctypes.util.find_library('Carbon')
+        if not carbon_path:
+            return vk_to_char
+        carbon = ctypes.CDLL(carbon_path)
+
+        # Get current keyboard layout
+        kTISPropertyUnicodeKeyLayoutData = ctypes.c_void_p.in_dll(
+            carbon, 'kTISPropertyUnicodeKeyLayoutData'
+        )
+        TISCopyCurrentKeyboardInputSource = carbon.TISCopyCurrentKeyboardInputSource
+        TISCopyCurrentKeyboardInputSource.restype = ctypes.c_void_p
+        TISGetInputSourceProperty = carbon.TISGetInputSourceProperty
+        TISGetInputSourceProperty.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        TISGetInputSourceProperty.restype = ctypes.c_void_p
+
+        source = TISCopyCurrentKeyboardInputSource()
+        if not source:
+            return vk_to_char
+
+        layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)
+        if not layout_data:
+            return vk_to_char
+
+        # Get the actual data pointer from CFData
+        CFDataGetBytePtr = carbon.CFDataGetBytePtr
+        CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
+        CFDataGetBytePtr.restype = ctypes.c_void_p
+        layout_ptr = CFDataGetBytePtr(layout_data)
+        if not layout_ptr:
+            return vk_to_char
+
+        # UCKeyTranslate function
+        UCKeyTranslate = carbon.UCKeyTranslate
+        UCKeyTranslate.argtypes = [
+            ctypes.c_void_p,  # keyLayoutPtr
+            ctypes.c_uint16,  # virtualKeyCode
+            ctypes.c_uint16,  # keyAction
+            ctypes.c_uint32,  # modifierKeyState
+            ctypes.c_uint32,  # keyboardType
+            ctypes.c_uint32,  # keyTranslateOptions
+            ctypes.POINTER(ctypes.c_uint32),  # deadKeyState
+            ctypes.c_uint8,   # maxStringLength
+            ctypes.POINTER(ctypes.c_uint8),   # actualStringLength
+            ctypes.c_void_p,  # unicodeString
+        ]
+        UCKeyTranslate.restype = ctypes.c_int32
+
+        kUCKeyActionDown = 0
+        kUCKeyTranslateNoDeadKeysBit = 0
+
+        # Try all VK codes 0-50 (covers most letter keys)
+        for vk in range(51):
+            dead_key_state = ctypes.c_uint32(0)
+            actual_length = ctypes.c_uint8(0)
+            unicode_string = (ctypes.c_uint16 * 4)()
+
+            result = UCKeyTranslate(
+                layout_ptr,
+                ctypes.c_uint16(vk),
+                ctypes.c_uint16(kUCKeyActionDown),
+                ctypes.c_uint32(0),  # No modifiers
+                ctypes.c_uint32(0),  # LMGetKbdType() - 0 works for current
+                ctypes.c_uint32(kUCKeyTranslateNoDeadKeysBit),
+                ctypes.byref(dead_key_state),
+                ctypes.c_uint8(4),
+                ctypes.byref(actual_length),
+                unicode_string,
+            )
+
+            if result == 0 and actual_length.value == 1:
+                char = chr(unicode_string[0]).lower()
+                if char.isalpha():
+                    vk_to_char[vk] = char
+
+        log.debug(f"Built VK->char map with {len(vk_to_char)} entries")
+    except Exception as e:
+        log.warning(f"Failed to build VK->char map: {e}")
+
+    return vk_to_char
 
 
 class HotkeyListener:
@@ -46,6 +139,27 @@ class HotkeyListener:
         self._lock = threading.Lock()
         self._listener: keyboard.Listener | None = None
 
+        # Parse modifiers from config string
+        self._required_modifiers = _parse_modifiers(config.HOTKEY_MODIFIERS)
+
+        # Build VK -> char mapping at startup using keyboard layout
+        self._vk_to_char = _build_vk_to_char_map()
+
+        # Build reverse mapping (char -> VK) for configured hotkeys
+        char_to_vk = {v: k for k, v in self._vk_to_char.items()}
+        self._record_key_vk = char_to_vk.get(config.HOTKEY_KEY.lower())
+        self._open_key_vk = char_to_vk.get(config.HOTKEY_OPEN_RECORDING_KEY.lower())
+
+        if self._record_key_vk is not None:
+            log.info(f"Record hotkey: VK {self._record_key_vk} for '{config.HOTKEY_KEY}'")
+        else:
+            log.warning(f"Could not find VK code for record key '{config.HOTKEY_KEY}'")
+
+        if self._open_key_vk is not None:
+            log.info(f"Open recording hotkey: VK {self._open_key_vk} for '{config.HOTKEY_OPEN_RECORDING_KEY}'")
+        else:
+            log.warning(f"Could not find VK code for open recording key '{config.HOTKEY_OPEN_RECORDING_KEY}'")
+
     def _get_modifier(self, key) -> str | None:
         return self._MODIFIER_MAP.get(key)
 
@@ -56,21 +170,25 @@ class HotkeyListener:
         return None
 
     def _check_modifiers(self) -> bool:
-        return config.HOTKEY_MODIFIERS <= self._pressed_modifiers
+        return self._required_modifiers <= self._pressed_modifiers
 
     def _check_record_hotkey(self) -> bool:
-        return self._check_modifiers() and config.HOTKEY_KEY_CODE in self._pressed_key_codes
+        if self._record_key_vk is None:
+            return False
+        return self._check_modifiers() and self._record_key_vk in self._pressed_key_codes
 
     def _check_open_recording_hotkey(self) -> bool:
-        return self._check_modifiers() and config.HOTKEY_OPEN_RECORDING_KEY_CODE in self._pressed_key_codes
+        if self._open_key_vk is None:
+            return False
+        return self._check_modifiers() and self._open_key_vk in self._pressed_key_codes
 
     def _all_hotkey_keys_released(self) -> bool:
         """Check if all hotkey keys (modifiers + main key) are released."""
         # Check if main key is still pressed
-        if config.HOTKEY_KEY_CODE in self._pressed_key_codes:
+        if self._record_key_vk is not None and self._record_key_vk in self._pressed_key_codes:
             return False
         # Check if any required modifier is still pressed
-        for mod in config.HOTKEY_MODIFIERS:
+        for mod in self._required_modifiers:
             if mod in self._pressed_modifiers:
                 return False
         return True
@@ -129,10 +247,15 @@ class HotkeyListener:
                 event, Quartz.kCGKeyboardEventKeycode
             )
 
-            # Suppress T and R keys while our hotkey is active or waiting for release
+            # Suppress hotkey keys while our hotkey is active or waiting for release
             with self._lock:
                 if self._hotkey_active or self._waiting_for_release:
-                    if key_code in (config.HOTKEY_KEY_CODE, config.HOTKEY_OPEN_RECORDING_KEY_CODE):
+                    suppress_keys = set()
+                    if self._record_key_vk is not None:
+                        suppress_keys.add(self._record_key_vk)
+                    if self._open_key_vk is not None:
+                        suppress_keys.add(self._open_key_vk)
+                    if key_code in suppress_keys:
                         return None  # Suppress
 
             return event  # Pass through

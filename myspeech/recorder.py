@@ -63,7 +63,16 @@ class Recorder:
             self._recording = True
 
         try:
-            log.info(f"Opening audio stream (device={self._device}, rate={config.SAMPLE_RATE})")
+            # Resolve device name for logging
+            if self._device is not None:
+                device_info = sd.query_devices(self._device)
+                device_name = f"[{self._device}] {device_info['name']}"
+            else:
+                default_idx = sd.default.device[0]
+                device_info = sd.query_devices(default_idx)
+                device_name = f"Default ([{default_idx}] {device_info['name']})"
+
+            log.info(f"Opening audio stream (device={device_name}, rate={config.SAMPLE_RATE})")
             self._stream = sd.InputStream(
                 samplerate=config.SAMPLE_RATE,
                 channels=config.CHANNELS,
