@@ -25,8 +25,8 @@ MySpeech requires the mlx-audio server running locally. Install it once:
 # Install uv if you don't have it
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create a dedicated environment and install mlx-audio
-uv venv ~/.mlx-audio-venv
+# Create a dedicated environment with Python 3.12 and install mlx-audio
+uv venv ~/.mlx-audio-venv --python 3.12
 source ~/.mlx-audio-venv/bin/activate
 uv pip install mlx-audio
 

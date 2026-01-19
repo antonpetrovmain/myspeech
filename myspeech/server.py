@@ -26,7 +26,7 @@ def show_server_not_found_dialog():
         alert.setInformativeText_(
             "MySpeech requires the mlx-audio server for transcription.\n\n"
             "Install it with:\n"
-            "  uv venv ~/.mlx-audio-venv\n"
+            "  uv venv ~/.mlx-audio-venv --python 3.12\n"
             "  source ~/.mlx-audio-venv/bin/activate\n"
             "  uv pip install mlx-audio\n"
             "  mlx_audio.server --port 8000\n\n"
