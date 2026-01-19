@@ -29,10 +29,11 @@ python main.py
 - `recorder.py` - Audio capture via sounddevice with callback streaming, outputs WAV bytes
 - `transcriber.py` - Sends audio to mlx-audio server using OpenAI-compatible API
 - `clipboard.py` - Saves frontmost app, sets clipboard via pbcopy, pastes via AppleScript
-- `popup.py` - Tkinter "Recording..." indicator in top-right corner
+- `popup.py` - Native macOS yellow dot indicator using AppKit
+- `menubar.py` - Menu bar icon and status
 
 **Threading model**:
-- Main thread runs tkinter event loop
+- Main thread runs AppKit event loop (via PyObjCTools.AppHelper)
 - All hotkey callbacks, recording, transcription, and clipboard operations run in daemon threads
 - `Recorder` and `HotkeyListener` use locks for thread synchronization
 

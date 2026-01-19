@@ -95,8 +95,8 @@ app = BUNDLE(
     info_plist={
         'CFBundleName': 'MySpeech',
         'CFBundleDisplayName': 'MySpeech',
-        'CFBundleVersion': '0.2.2',
-        'CFBundleShortVersionString': '0.2.2',
+        'CFBundleVersion': '0.2.3',
+        'CFBundleShortVersionString': '0.2.3',
         'LSMinimumSystemVersion': '13.0',
         'NSMicrophoneUsageDescription': 'MySpeech needs microphone access to record your voice for transcription.',
         'NSAppleEventsUsageDescription': 'MySpeech needs automation access to paste transcribed text.',

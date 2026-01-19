@@ -58,30 +58,22 @@ This downloads, installs, and removes the Gatekeeper quarantine automatically.
    ```
 3. Launch from Applications and grant permissions (see below)
 
-### Option 2: Development Setup
+### Development Setup
 
-For development or if you want to run from source:
+For development or running from source:
 
-1. **Install tkinter**
-   ```bash
-   brew install python-tk@3.13  # or python-tk@3.12
-   ```
+```bash
+git clone https://github.com/antonpetrovmain/myspeech.git
+cd myspeech
 
-2. **Clone and install**
-   ```bash
-   git clone https://github.com/antonpetrovmain/myspeech.git
-   cd myspeech
+# Create virtual environment with uv
+uv venv .venv
+source .venv/bin/activate
+uv pip install -e .
 
-   # Create virtual environment with uv
-   uv venv .venv
-   source .venv/bin/activate
-   uv pip install -e .
-   ```
-
-3. **Run the app**
-   ```bash
-   python main.py
-   ```
+# Run the app
+python main.py
+```
 
 ### macOS Permissions
 
@@ -161,9 +153,6 @@ Alternatively, right-click the app and select "Open" to bypass Gatekeeper.
 - Speak clearly and close to microphone
 - Check `MIN_RECORDING_DURATION` and `MIN_AUDIO_LEVEL` in config.py
 
-### "Read-only file system" error on app launch
-- This is fixed in the latest version. Rebuild with: `pyinstaller MySpeech.spec --clean -y`
-
 ### "MLX Audio Server not found" dialog
 - Install mlx-audio server first (see [Requirements](#installing-mlx-audio-server))
 - Ensure the server is running: `mlx_audio.server --port 8000`
@@ -173,11 +162,6 @@ Alternatively, right-click the app and select "Open" to bypass Gatekeeper.
 - Check server logs: `tail -f ~/Library/Logs/MySpeech-server.log`
 - Verify port 8000 is not in use: `lsof -i :8000`
 - Start manually: `source ~/.mlx-audio-venv/bin/activate && mlx_audio.server --port 8000`
-
-### "No module named '_tkinter'" (development only)
-```bash
-brew install python-tk@3.13
-```
 
 ## License
 
