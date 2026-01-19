@@ -1,8 +1,21 @@
 #!/bin/bash
 # MySpeech Installer
 # Downloads and installs MySpeech, bypassing Gatekeeper
+#
+# Usage: install.sh [--force|-f]
+#   --force, -f  Force reinstall even if same version is installed
 
 set -e
+
+# Parse arguments
+FORCE=false
+for arg in "$@"; do
+    case $arg in
+        --force|-f)
+            FORCE=true
+            ;;
+    esac
+done
 
 APP_NAME="MySpeech"
 INSTALL_DIR="/Applications"
@@ -54,9 +67,9 @@ fi
 echo "Current version: $CURRENT_VERSION"
 echo "Installing version: $NEW_VERSION"
 
-# Skip if already up to date
-if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
-    echo "Already up to date! No installation needed."
+# Skip if already up to date (unless --force)
+if [ "$CURRENT_VERSION" = "$NEW_VERSION" ] && [ "$FORCE" = false ]; then
+    echo "Already up to date! Use --force to reinstall."
     rm -rf "$TEMP_DIR"
     exit 0
 fi
