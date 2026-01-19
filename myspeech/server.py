@@ -69,7 +69,8 @@ class ServerManager:
         # Check common venv locations
         home = Path.home()
         search_paths = [
-            home / "source/myspeech/.venv/bin/mlx_audio.server",
+            home / ".mlx-audio-venv/bin/mlx_audio.server",  # Recommended location
+            home / "source/myspeech/.venv/bin/mlx_audio.server",  # Development
             home / ".venv/bin/mlx_audio.server",
             Path("/opt/homebrew/bin/mlx_audio.server"),
         ]
