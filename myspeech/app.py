@@ -30,7 +30,7 @@ from myspeech.hotkey import HotkeyListener
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
 from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb, show_server_not_found_dialog
-from myspeech.menubar import MenuBar
+from myspeech.menubar import MenuBar, get_app_version
 
 
 class MySpeechApp:
@@ -114,6 +114,8 @@ class MySpeechApp:
             pass
 
     def run(self):
+        log.info(f"MySpeech v{get_app_version()} starting...")
+
         # Ensure server is running
         if not self._server.start():
             log.error("Cannot start without mlx-audio server. Exiting.")
