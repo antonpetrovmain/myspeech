@@ -132,17 +132,17 @@ class MySpeechApp:
         default_idx = sd.default.device[0]
         log.info(f"Audio inputs: {len(input_devices)} devices, default: [{default_idx}]")
 
-        # Setup tkinter on main thread
-        root = self._popup.setup()
+        # Setup native macOS app on main thread
+        self._popup.setup()
 
-        # Create menu bar (setup deferred to after mainloop starts)
+        # Create menu bar (setup deferred to after event loop starts)
         self._menubar = MenuBar(self)
 
         def setup_menubar():
             self._menubar.setup(quit_callback=self._popup.stop)
 
-        # Defer menu bar setup to run within tkinter's event loop
-        root.after(100, setup_menubar)
+        # Defer menu bar setup to run within the event loop
+        self._popup.schedule_delayed(100, setup_menubar)
 
         # Start hotkey listener in background thread
         self._hotkey = HotkeyListener(
@@ -160,7 +160,7 @@ class MySpeechApp:
         signal.signal(signal.SIGINT, on_sigint)
 
         try:
-            root.mainloop()
+            self._popup.run()
         finally:
             if self._hotkey:
                 self._hotkey.stop()

@@ -1,6 +1,6 @@
-import tkinter as tk
 from typing import Callable
 import logging
+import threading
 
 import config
 
@@ -9,25 +9,32 @@ log = logging.getLogger(__name__)
 # Global references to prevent garbage collection
 _dot_window = None
 _dot_view = None
+_app = None
 
 
 class RecordingPopup:
-    """Recording indicator using native macOS NSWindow for true transparency."""
+    """Recording indicator using native macOS NSWindow and NSApplication."""
 
     def __init__(self):
-        self._root: tk.Tk | None = None
         self._visible = False
         self._ns_window = None
+        self._app = None
+        self._stop_event = threading.Event()
 
-    def setup(self) -> tk.Tk:
-        # Create a hidden tkinter root for the event loop
-        self._root = tk.Tk()
-        self._root.withdraw()  # Hide the tkinter window completely
+    def setup(self):
+        """Setup native macOS application and dot indicator."""
+        global _app
 
-        # Create native macOS window for the dot
+        from AppKit import NSApplication, NSApp
+
+        # Get or create the shared application
+        self._app = NSApplication.sharedApplication()
+        _app = self._app
+
+        # Create the dot window
         self._setup_native_dot()
 
-        return self._root
+        return self
 
     def _setup_native_dot(self):
         """Create a native macOS window with true transparency."""
@@ -114,14 +121,22 @@ class RecordingPopup:
                 )
 
     def schedule(self, callback: Callable[[], None]):
-        """Schedule a callback on the tkinter main thread."""
-        if self._root:
-            self._root.after(0, callback)
+        """Schedule a callback on the main thread."""
+        from Foundation import NSObject
+        from PyObjCTools import AppHelper
+        AppHelper.callAfter(callback)
 
     def schedule_delayed(self, delay_ms: int, callback: Callable[[], None]):
-        if self._root:
-            self._root.after(delay_ms, callback)
+        """Schedule a delayed callback."""
+        from PyObjCTools import AppHelper
+        AppHelper.callLater(delay_ms / 1000.0, callback)
+
+    def run(self):
+        """Run the main event loop."""
+        from PyObjCTools import AppHelper
+        AppHelper.runEventLoop()
 
     def stop(self):
-        if self._root:
-            self._root.after(0, self._root.quit)
+        """Stop the main event loop."""
+        from PyObjCTools import AppHelper
+        AppHelper.stopEventLoop()
