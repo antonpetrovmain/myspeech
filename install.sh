@@ -39,8 +39,30 @@ if [ -z "$RELEASE_URL" ]; then
     exit 1
 fi
 
+# Extract version from filename (e.g., MySpeech-v0.2.3-macos-arm64.zip)
+NEW_VERSION=$(echo "$RELEASE_URL" | sed -n 's/.*MySpeech-v\([0-9.]*\)-.*/\1/p')
+
+# Check currently installed version
+CURRENT_VERSION="not installed"
+if [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
+    PLIST="$INSTALL_DIR/$APP_NAME.app/Contents/Info.plist"
+    if [ -f "$PLIST" ]; then
+        CURRENT_VERSION=$(defaults read "$PLIST" CFBundleShortVersionString 2>/dev/null || echo "unknown")
+    fi
+fi
+
+echo "Current version: $CURRENT_VERSION"
+echo "Installing version: $NEW_VERSION"
+
+# Skip if already up to date
+if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+    echo "Already up to date! No installation needed."
+    rm -rf "$TEMP_DIR"
+    exit 0
+fi
+
 # Download latest release
-echo "Downloading from $RELEASE_URL..."
+echo "Downloading..."
 curl -L -o myspeech.zip "$RELEASE_URL"
 
 # Extract
