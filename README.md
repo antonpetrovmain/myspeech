@@ -14,8 +14,27 @@ A macOS speech-to-text application using [mlx-audio](https://github.com/Blaizzy/
 
 ## Requirements
 
-- macOS on Apple Silicon (M1/M2/M3/M4)
-- Python 3.12+
+- macOS 13+ on Apple Silicon (M1/M2/M3/M4)
+- **MLX Audio Server** (provides the Whisper transcription backend)
+
+### Installing MLX Audio Server
+
+MySpeech requires the mlx-audio server running locally. Install it once:
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create a dedicated environment and install mlx-audio
+uv venv ~/.mlx-audio-venv
+source ~/.mlx-audio-venv/bin/activate
+uv pip install mlx-audio
+
+# Start the server (first run downloads ~1.5GB Whisper model)
+mlx_audio.server --port 8000
+```
+
+**Tip**: Keep the server running in a terminal tab or add it to your shell startup.
 
 ## Installation
 
@@ -129,11 +148,15 @@ SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
 ### "Read-only file system" error on app launch
 - This is fixed in the latest version. Rebuild with: `pyinstaller MySpeech.spec --clean -y`
 
+### "MLX Audio Server not found" dialog
+- Install mlx-audio server first (see [Requirements](#installing-mlx-audio-server))
+- Ensure the server is running: `mlx_audio.server --port 8000`
+
 ### Server fails to start
 - First run downloads the Whisper model (~1.5GB) - wait 2-3 minutes
 - Check server logs: `tail -f ~/Library/Logs/MySpeech-server.log`
 - Verify port 8000 is not in use: `lsof -i :8000`
-- Start manually: `source .venv/bin/activate && mlx_audio.server --port 8000`
+- Start manually: `source ~/.mlx-audio-venv/bin/activate && mlx_audio.server --port 8000`
 
 ### "No module named '_tkinter'" (development only)
 ```bash

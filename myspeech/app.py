@@ -29,7 +29,7 @@ from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
-from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb
+from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb, show_server_not_found_dialog
 from myspeech.menubar import MenuBar
 
 
@@ -117,6 +117,7 @@ class MySpeechApp:
         # Ensure server is running
         if not self._server.start():
             log.error("Cannot start without mlx-audio server. Exiting.")
+            show_server_not_found_dialog()
             sys.exit(1)
 
         # Display server info

@@ -12,6 +12,39 @@ import config
 log = logging.getLogger(__name__)
 
 
+def show_server_not_found_dialog():
+    """Show a native macOS dialog explaining how to install mlx-audio server."""
+    try:
+        from AppKit import NSAlert, NSAlertStyleWarning, NSApplication
+
+        # Ensure NSApplication is initialized
+        NSApplication.sharedApplication()
+
+        alert = NSAlert.alloc().init()
+        alert.setAlertStyle_(NSAlertStyleWarning)
+        alert.setMessageText_("MLX Audio Server Not Found")
+        alert.setInformativeText_(
+            "MySpeech requires the mlx-audio server for transcription.\n\n"
+            "Install it with:\n"
+            "  uv venv ~/.mlx-audio-venv\n"
+            "  source ~/.mlx-audio-venv/bin/activate\n"
+            "  uv pip install mlx-audio\n"
+            "  mlx_audio.server --port 8000\n\n"
+            "See the README for detailed instructions."
+        )
+        alert.addButtonWithTitle_("Open README")
+        alert.addButtonWithTitle_("Quit")
+
+        response = alert.runModal()
+
+        # 1000 = first button (Open README)
+        if response == 1000:
+            subprocess.run(["open", "https://github.com/antonpetrovmain/myspeech#installing-mlx-audio-server"], check=False)
+
+    except Exception as e:
+        log.warning(f"Could not show dialog: {e}")
+
+
 class ServerManager:
     def __init__(self):
         self._process: subprocess.Popen | None = None
