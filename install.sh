@@ -17,6 +17,15 @@ if [ ! -w "$INSTALL_DIR" ] || [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
     echo "Administrator privileges required to install to /Applications"
 fi
 
+# Helper to run commands with sudo if needed
+run_cmd() {
+    if [ "$NEEDS_SUDO" = true ]; then
+        sudo "$@"
+    else
+        "$@"
+    fi
+}
+
 # Create temp directory
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
@@ -41,28 +50,16 @@ unzip -q myspeech.zip
 # Remove old version if exists
 if [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
     echo "Removing old version..."
-    if [ "$NEEDS_SUDO" = true ]; then
-        sudo rm -rf "$INSTALL_DIR/$APP_NAME.app"
-    else
-        rm -rf "$INSTALL_DIR/$APP_NAME.app"
-    fi
+    run_cmd rm -rf "$INSTALL_DIR/$APP_NAME.app"
 fi
 
 # Move to Applications
 echo "Installing to $INSTALL_DIR..."
-if [ "$NEEDS_SUDO" = true ]; then
-    sudo mv "$APP_NAME.app" "$INSTALL_DIR/"
-else
-    mv "$APP_NAME.app" "$INSTALL_DIR/"
-fi
+run_cmd mv "$APP_NAME.app" "$INSTALL_DIR/"
 
 # Remove quarantine attribute (bypasses Gatekeeper)
 echo "Removing quarantine..."
-if [ "$NEEDS_SUDO" = true ]; then
-    sudo xattr -cr "$INSTALL_DIR/$APP_NAME.app"
-else
-    xattr -cr "$INSTALL_DIR/$APP_NAME.app"
-fi
+run_cmd xattr -cr "$INSTALL_DIR/$APP_NAME.app"
 
 # Cleanup
 rm -rf "$TEMP_DIR"

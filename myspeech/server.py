@@ -140,7 +140,11 @@ class ServerManager:
             self._server_log_file = None
 
     def get_memory_mb(self) -> int | None:
-        """Get memory usage of mlx_audio.server and its child processes in MB."""
+        """Get memory usage of mlx_audio.server in MB.
+
+        Uses 'top' to get internal memory (private + shared), which accurately
+        reflects MLX model memory including memory-mapped files and Metal GPU buffers.
+        """
         try:
             # Find main server process
             result = subprocess.run(
@@ -151,40 +155,35 @@ class ServerManager:
             if result.returncode != 0:
                 return None
 
-            parent_pids = [p for p in result.stdout.strip().split("\n") if p]
-            all_pids = set(parent_pids)
+            pids = [p for p in result.stdout.strip().split("\n") if p]
+            if not pids:
+                return None
 
-            # Find all child processes recursively
-            def get_children(pid: str) -> list[str]:
-                result = subprocess.run(
-                    ["pgrep", "-P", pid],
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode == 0:
-                    return [p for p in result.stdout.strip().split("\n") if p]
-                return []
-
-            to_check = list(parent_pids)
-            while to_check:
-                pid = to_check.pop()
-                children = get_children(pid)
-                for child in children:
-                    if child not in all_pids:
-                        all_pids.add(child)
-                        to_check.append(child)
-
-            # Sum memory of all processes
+            # Use top to get accurate memory usage (MEM column shows internal memory)
+            # This includes memory-mapped files and Metal GPU memory used by MLX
             total_mb = 0
-            for pid in all_pids:
-                ps_result = subprocess.run(
-                    ["ps", "-o", "rss=", "-p", pid],
+            for pid in pids:
+                top_result = subprocess.run(
+                    ["top", "-pid", pid, "-l", "1", "-stats", "pid,mem"],
                     capture_output=True,
                     text=True,
                 )
-                if ps_result.returncode == 0 and ps_result.stdout.strip():
-                    rss_kb = int(ps_result.stdout.strip())
-                    total_mb += rss_kb // 1024
+                if top_result.returncode == 0:
+                    # Parse output: skip header lines, extract MEM column
+                    for line in top_result.stdout.strip().split("\n"):
+                        if line.strip().startswith(pid):
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                mem_str = parts[1]  # MEM column (e.g., "1862M", "1862M+", "1.5G")
+                                # Remove trailing + or - signs
+                                mem_str = mem_str.rstrip("+-")
+                                # Parse memory value
+                                if mem_str.endswith("G"):
+                                    total_mb += int(float(mem_str[:-1]) * 1024)
+                                elif mem_str.endswith("M"):
+                                    total_mb += int(float(mem_str[:-1]))
+                                elif mem_str.endswith("K"):
+                                    total_mb += int(float(mem_str[:-1]) / 1024)
 
             return total_mb if total_mb > 0 else None
         except Exception:
