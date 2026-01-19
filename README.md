@@ -46,15 +46,16 @@ Run this one-liner in Terminal:
 curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash
 ```
 
-This downloads, installs, and removes the Gatekeeper quarantine automatically.
+This downloads, installs, and removes the Gatekeeper quarantine automatically. You may be prompted for your admin password to install to `/Applications`.
 
 ### Manual Install
 
 1. Download `MySpeech-vX.X.X-macos-arm64.zip` from the [latest release](https://github.com/antonpetrovmain/myspeech/releases)
-2. Extract and install:
+2. Extract and install (requires admin privileges):
    ```bash
-   unzip MySpeech-*.zip -d /Applications/
-   xattr -cr /Applications/MySpeech.app
+   unzip MySpeech-*.zip
+   sudo mv MySpeech.app /Applications/
+   sudo xattr -cr /Applications/MySpeech.app
    ```
 3. Launch from Applications and grant permissions (see below)
 
@@ -135,7 +136,7 @@ SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
 ### "MySpeech is damaged and can't be opened"
 This is macOS Gatekeeper blocking unsigned apps downloaded from the internet. Fix it by removing the quarantine attribute:
 ```bash
-xattr -cr /Applications/MySpeech.app
+sudo xattr -cr /Applications/MySpeech.app
 ```
 Alternatively, right-click the app and select "Open" to bypass Gatekeeper.
 
