@@ -38,20 +38,25 @@ mlx_audio.server --port 8000
 
 ## Installation
 
-### Option 1: Pre-built macOS App (Recommended)
+### Quick Install (Recommended)
 
-The easiest way to use MySpeech:
+Run this one-liner in Terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash
+```
+
+This downloads, installs, and removes the Gatekeeper quarantine automatically.
+
+### Manual Install
 
 1. Download `MySpeech-vX.X.X-macos-arm64.zip` from the [latest release](https://github.com/antonpetrovmain/myspeech/releases)
-2. Extract and move to Applications:
+2. Extract and install:
    ```bash
    unzip MySpeech-*.zip -d /Applications/
-   ```
-3. **Remove quarantine** (required for apps not signed with Apple Developer ID):
-   ```bash
    xattr -cr /Applications/MySpeech.app
    ```
-4. Launch from Applications and grant permissions (see below)
+3. Launch from Applications and grant permissions (see below)
 
 ### Option 2: Development Setup
 
