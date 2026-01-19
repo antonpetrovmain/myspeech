@@ -42,12 +42,16 @@ mlx_audio.server --port 8000
 
 The easiest way to use MySpeech:
 
-1. Download `MySpeech.app` from the latest release or [build it yourself](#building-the-app)
-2. Copy to Applications folder:
+1. Download `MySpeech-vX.X.X-macos-arm64.zip` from the [latest release](https://github.com/antonpetrovmain/myspeech/releases)
+2. Extract and move to Applications:
    ```bash
-   cp -r MySpeech.app /Applications/
+   unzip MySpeech-*.zip -d /Applications/
    ```
-3. Launch from Applications and grant permissions (see below)
+3. **Remove quarantine** (required for apps not signed with Apple Developer ID):
+   ```bash
+   xattr -cr /Applications/MySpeech.app
+   ```
+4. Launch from Applications and grant permissions (see below)
 
 ### Option 2: Development Setup
 
@@ -130,6 +134,13 @@ SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
 ```
 
 ## Troubleshooting
+
+### "MySpeech is damaged and can't be opened"
+This is macOS Gatekeeper blocking unsigned apps downloaded from the internet. Fix it by removing the quarantine attribute:
+```bash
+xattr -cr /Applications/MySpeech.app
+```
+Alternatively, right-click the app and select "Open" to bypass Gatekeeper.
 
 ### Hotkey not working
 - Grant **Accessibility** permission: System Settings > Privacy & Security > Accessibility > Add MySpeech.app
