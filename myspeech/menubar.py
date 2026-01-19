@@ -7,6 +7,28 @@ from myspeech.recorder import get_input_devices, get_default_input_device
 
 log = logging.getLogger(__name__)
 
+
+def get_app_version() -> str:
+    """Get the app version from Info.plist (bundled app) or return default."""
+    try:
+        # Try to read from app bundle's Info.plist
+        import sys
+        if getattr(sys, 'frozen', False):
+            # Running as bundled app
+            app_path = Path(sys.executable).parent.parent
+            plist_path = app_path / "Info.plist"
+            if plist_path.exists():
+                result = subprocess.run(
+                    ["defaults", "read", str(plist_path), "CFBundleShortVersionString"],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    return result.stdout.strip()
+    except Exception:
+        pass
+    return "dev"
+
 # Global to hold reference to delegate (prevent garbage collection)
 _delegate = None
 _status_item = None
@@ -84,6 +106,14 @@ class MenuBar:
 
             # Create menu
             menu = NSMenu.alloc().initWithTitle_("MySpeech")
+
+            # Version item
+            version = get_app_version()
+            version_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                f"MySpeech v{version}", None, ""
+            )
+            version_item.setEnabled_(False)
+            menu.addItem_(version_item)
 
             # Server status item
             server_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
