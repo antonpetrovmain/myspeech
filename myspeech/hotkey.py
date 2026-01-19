@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from typing import Callable
@@ -6,6 +7,8 @@ import Quartz
 from pynput import keyboard
 
 import config
+
+log = logging.getLogger(__name__)
 
 
 class HotkeyListener:
@@ -92,6 +95,7 @@ class HotkeyListener:
                 return
 
             if not self._hotkey_active and self._check_record_hotkey():
+                log.info("Record hotkey detected")
                 self._hotkey_active = True
                 threading.Thread(target=self._on_record_start, daemon=True).start()
 

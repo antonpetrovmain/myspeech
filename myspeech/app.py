@@ -45,44 +45,44 @@ class MySpeechApp:
         self._lock = threading.Lock()
 
     def _on_record_start(self):
+        log.info("Hotkey pressed - starting recording")
         # Save frontmost app immediately (before any UI changes)
         threading.Thread(target=self._clipboard.save, daemon=True).start()
 
-        def do_start():
-            with self._lock:
-                self._recorder.start()
-            # Update menu bar to show recording status
-            if self._menubar:
-                self._menubar.set_recording(True)
-            self._popup.schedule_delayed(150, self._popup.show)
+        # Start recording directly (we're already in a daemon thread)
+        with self._lock:
+            self._recorder.start()
 
-        self._popup.schedule(do_start)
+        # Update menu bar to show recording status
+        if self._menubar:
+            self._menubar.set_recording(True)
+
+        # Show popup (schedule on main thread for UI)
+        self._popup.show()
 
     def _on_record_stop(self):
-        def do_stop():
-            with self._lock:
-                audio_bytes = self._recorder.stop()
+        # Stop recording directly (we're already in a daemon thread)
+        with self._lock:
+            audio_bytes = self._recorder.stop()
 
-            # Update menu bar to show not recording
-            if self._menubar:
-                self._menubar.set_recording(False)
+        # Update menu bar to show not recording
+        if self._menubar:
+            self._menubar.set_recording(False)
 
-            if not audio_bytes:
-                self._clipboard.restore()
-                return
+        if not audio_bytes:
+            self._clipboard.restore()
+            return
 
-            # Transcribe in background to not block
-            threading.Thread(
-                target=self._process_transcription,
-                args=(audio_bytes,),
-                daemon=True,
-            ).start()
-
-        self._popup.schedule(do_stop)
+        # Transcribe in background to not block
+        threading.Thread(
+            target=self._process_transcription,
+            args=(audio_bytes,),
+            daemon=True,
+        ).start()
 
     def _on_keys_released(self):
         """Called when all hotkey keys are released - safe to hide popup."""
-        self._popup.schedule(self._popup.hide)
+        self._popup.hide()
 
     def _process_transcription(self, audio_bytes: bytes):
         log.info("Transcribing...")

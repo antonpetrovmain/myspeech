@@ -3,12 +3,15 @@ import subprocess
 from pathlib import Path
 
 import config
+from myspeech.recorder import get_input_devices, get_default_input_device
 
 log = logging.getLogger(__name__)
 
 # Global to hold reference to delegate (prevent garbage collection)
 _delegate = None
 _status_item = None
+_audio_menu = None
+_audio_menu_items = []
 
 
 class MenuBar:
@@ -19,21 +22,24 @@ class MenuBar:
         self._recording = False
         self._quit_callback = None
         self._is_setup = False
+        self._current_device = None  # None = default
 
     def setup(self, quit_callback=None):
         """Set up the menu bar."""
-        global _delegate, _status_item
+        global _delegate, _status_item, _audio_menu, _audio_menu_items
 
         self._quit_callback = quit_callback
+        menu_bar_instance = self
 
         try:
-            from AppKit import NSStatusBar, NSMenu, NSMenuItem, NSImage, NSObject
+            from AppKit import NSStatusBar, NSMenu, NSMenuItem, NSImage, NSObject, NSOnState, NSOffState
             import objc
 
             class MenuBarDelegate(NSObject):
                 """Delegate to handle menu actions."""
 
                 quit_callback = None
+                menubar = None
 
                 def openLog_(self, sender):
                     log_path = Path.home() / "Library/Logs/MySpeech.log"
@@ -45,12 +51,20 @@ class MenuBar:
                     if recording_path.exists():
                         subprocess.run(["open", str(recording_path)], check=False)
 
+                def selectAudioDevice_(self, sender):
+                    # Get device index from tag (-1 means default)
+                    device_idx = sender.tag()
+                    device = None if device_idx == -1 else device_idx
+                    if self.menubar:
+                        self.menubar._select_device(device)
+
                 def quitApp_(self, sender):
                     # Use os._exit to avoid tkinter thread issues
                     import os
                     os._exit(0)
 
             MenuBarDelegate.quit_callback = quit_callback
+            MenuBarDelegate.menubar = menu_bar_instance
 
             # Get the system status bar
             status_bar = NSStatusBar.systemStatusBar()
@@ -98,6 +112,46 @@ class MenuBar:
             # Separator
             menu.addItem_(NSMenuItem.separatorItem())
 
+            # Audio input device submenu
+            audio_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Audio Input", None, ""
+            )
+            _audio_menu = NSMenu.alloc().initWithTitle_("Audio Input")
+            _audio_menu_items = []
+
+            # Add "Default" option
+            default_idx = get_default_input_device()
+            devices = get_input_devices()
+            default_name = next((name for idx, name in devices if idx == default_idx), "System Default")
+
+            default_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                f"Default ({default_name})", "selectAudioDevice:", ""
+            )
+            default_item.setTarget_(_delegate)
+            default_item.setTag_(-1)  # -1 means default
+            default_item.setState_(NSOnState)  # Default is selected initially
+            _audio_menu.addItem_(default_item)
+            _audio_menu_items.append((-1, default_item))
+
+            _audio_menu.addItem_(NSMenuItem.separatorItem())
+
+            # Add all input devices
+            for idx, name in devices:
+                item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                    f"[{idx}] {name}", "selectAudioDevice:", ""
+                )
+                item.setTarget_(_delegate)
+                item.setTag_(idx)
+                item.setState_(NSOffState)
+                _audio_menu.addItem_(item)
+                _audio_menu_items.append((idx, item))
+
+            audio_item.setSubmenu_(_audio_menu)
+            menu.addItem_(audio_item)
+
+            # Separator
+            menu.addItem_(NSMenuItem.separatorItem())
+
             # Quit
             quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 "Quit MySpeech", "quitApp:", ""
@@ -120,3 +174,28 @@ class MenuBar:
     def update_server_status(self, status: str):
         """Update server status in menu."""
         pass
+
+    def _select_device(self, device_index: int | None):
+        """Select an audio input device."""
+        global _audio_menu_items
+
+        try:
+            from AppKit import NSOnState, NSOffState
+        except ImportError:
+            return
+
+        self._current_device = device_index
+
+        # Update checkmarks
+        tag_to_find = -1 if device_index is None else device_index
+        for tag, item in _audio_menu_items:
+            if tag == tag_to_find:
+                item.setState_(NSOnState)
+            else:
+                item.setState_(NSOffState)
+
+        # Update the recorder
+        if self._app and hasattr(self._app, '_recorder'):
+            self._app._recorder.set_device(device_index)
+            device_name = "Default" if device_index is None else f"[{device_index}]"
+            log.info(f"Audio input changed to: {device_name}")

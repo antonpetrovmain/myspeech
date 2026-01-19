@@ -15,10 +15,12 @@ RECORDING_PATH = "/tmp/myspeech_recording.wav"
 MIN_RECORDING_DURATION = 0.5  # Minimum seconds to accept recording
 MIN_AUDIO_LEVEL = 100  # Minimum audio level to accept (prevents silent recordings)
 
-# Hotkey (key codes detected on this system)
+# Hotkey (macOS virtual key codes - physical positions based on QWERTY)
+# For Colemak: T=3 (QWERTY F), R=1 (QWERTY S)
+# For QWERTY: T=17, R=15
 HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
-HOTKEY_KEY_CODE = 3  # T key (Cmd+Ctrl+T)
-HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key (Cmd+Ctrl+R)
+HOTKEY_KEY_CODE = 3  # T key on Colemak (Cmd+Ctrl+T)
+HOTKEY_OPEN_RECORDING_KEY_CODE = 1  # R key on Colemak (Cmd+Ctrl+R)
 HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
 
 # Popup (recording dot indicator)

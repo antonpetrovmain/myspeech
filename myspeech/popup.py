@@ -98,24 +98,23 @@ class RecordingPopup:
     def show(self):
         if not self._visible:
             self._visible = True
-            if self._root:
-                self._root.after(0, self._do_show)
-
-    def _do_show(self):
-        if self._ns_window:
-            self._ns_window.orderFront_(None)
+            if self._ns_window:
+                # Dispatch to main thread for thread safety
+                self._ns_window.performSelectorOnMainThread_withObject_waitUntilDone_(
+                    "orderFront:", None, False
+                )
 
     def hide(self):
         if self._visible:
             self._visible = False
-            if self._root:
-                self._root.after(0, self._do_hide)
-
-    def _do_hide(self):
-        if self._ns_window:
-            self._ns_window.orderOut_(None)
+            if self._ns_window:
+                # Dispatch to main thread for thread safety
+                self._ns_window.performSelectorOnMainThread_withObject_waitUntilDone_(
+                    "orderOut:", None, False
+                )
 
     def schedule(self, callback: Callable[[], None]):
+        """Schedule a callback on the tkinter main thread."""
         if self._root:
             self._root.after(0, callback)
 
