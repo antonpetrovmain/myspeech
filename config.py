@@ -30,3 +30,5 @@ POPUP_DOT_ALPHA = get("popup", "dot_alpha", 0.7)
 
 # Clipboard
 PASTE_DELAY = get("clipboard", "paste_delay", 0.1)
+RESTORE_CLIPBOARD = get("clipboard", "restore_clipboard", True)
+RESTORE_DELAY = get("clipboard", "restore_delay", 0.2)

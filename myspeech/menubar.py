@@ -73,6 +73,10 @@ class MenuBar:
                     if recording_path.exists():
                         subprocess.run(["open", str(recording_path)], check=False)
 
+                def openSettings_(self, sender):
+                    from myspeech.user_config import CONFIG_FILE
+                    subprocess.run(["open", str(CONFIG_FILE)], check=False)
+
                 def selectAudioDevice_(self, sender):
                     # Get device index from tag (-1 means default)
                     device_idx = sender.tag()
@@ -138,6 +142,13 @@ class MenuBar:
             )
             open_rec_item.setTarget_(_delegate)
             menu.addItem_(open_rec_item)
+
+            # Edit settings
+            open_settings_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Edit Settings...", "openSettings:", ""
+            )
+            open_settings_item.setTarget_(_delegate)
+            menu.addItem_(open_settings_item)
 
             # Separator
             menu.addItem_(NSMenuItem.separatorItem())

@@ -6,7 +6,8 @@ A macOS speech-to-text application using [mlx-audio](https://github.com/Blaizzy/
 
 - **Global Hotkey**: Hold Cmd+Ctrl+T to record, release to transcribe
 - **Auto-paste**: Transcription is automatically pasted into your active application
-- **Menu Bar Icon**: Shows app status with quick access to logs and quit
+- **Clipboard Restore**: After pasting, your original clipboard is restored (transcription stays in clipboard history)
+- **Menu Bar Icon**: Shows app status with quick access to logs, settings, and audio device selection
 - **Playback**: Press Cmd+Ctrl+R to open and replay your last recording
 - **Local Processing**: Uses Whisper via mlx-audio (no cloud API needed)
 - **Auto-start Server**: Automatically starts mlx-audio server if not running
@@ -110,26 +111,40 @@ cp -r dist/MySpeech.app /Applications/
 
 ## Configuration
 
-Edit `config.py` to customize:
+Settings are stored in `~/.config/myspeech/config.toml` (created on first run).
 
-```python
-# Server
-MLX_AUDIO_SERVER_URL = "http://localhost:8000/v1"
-WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
+**To edit:** Click the menu bar icon → "Edit Settings..." or open the file directly.
 
-# Audio
-AUDIO_DEVICE = None  # Set to device index or None for default
-MIN_RECORDING_DURATION = 0.5  # Minimum seconds to accept
-MIN_AUDIO_LEVEL = 100  # Minimum audio level threshold
+```toml
+[server]
+url = "http://localhost:8000/v1"
+model = "mlx-community/whisper-large-v3-turbo"
 
-# Hotkey
-HOTKEY_MODIFIERS = {'cmd', 'ctrl'}
-HOTKEY_KEY_CODE = 3  # T key
-HOTKEY_DEBOUNCE_SECONDS = 0.5  # Ignore new recordings within this time
+[audio]
+device = "default"              # "default" or device index (e.g., 4)
+save_recording = true
+recording_path = "/tmp/myspeech_recording.wav"
+min_duration = 0.5              # Minimum seconds to accept recording
+min_level = 100                 # Minimum audio level (prevents silent recordings)
 
-# Recording
-SAVE_RECORDING = True  # Save last recording to /tmp/myspeech_recording.wav
+[hotkey]
+modifiers = "cmd+ctrl"          # Modifiers: cmd, ctrl, alt, shift (separated by +)
+record_key = "t"                # Hold to record (Cmd+Ctrl+T)
+open_recording_key = "r"        # Open last recording (Cmd+Ctrl+R)
+debounce_seconds = 0.5
+
+[popup]
+dot_size = 16
+dot_color = "#ffcc00"
+dot_alpha = 0.7
+
+[clipboard]
+paste_delay = 0.1               # Seconds to wait for app to activate before pasting
+restore_clipboard = true        # Restore original clipboard after pasting transcription
+restore_delay = 0.2             # Seconds before restoring (lets clipboard history capture transcription)
 ```
+
+**Clipboard Restore:** When enabled (default), your original clipboard content is restored after pasting the transcription. The transcription remains accessible via clipboard history apps (e.g., Raycast, Alfred, Paste). Set `restore_clipboard = false` to keep the transcription in your clipboard instead.
 
 ## Troubleshooting
 
@@ -147,12 +162,12 @@ Alternatively, right-click the app and select "Open" to bypass Gatekeeper.
 ### No recording captured
 - Grant **Microphone** permission in System Settings
 - Check audio input device: `python -c "import sounddevice; print(sounddevice.query_devices())"`
-- Adjust `MIN_AUDIO_LEVEL` in config.py if microphone is quiet
+- Adjust `min_level` in config if microphone is quiet
 
 ### Transcription shows wrong text
 - Audio may be too short or quiet - Whisper can hallucinate on silence
 - Speak clearly and close to microphone
-- Check `MIN_RECORDING_DURATION` and `MIN_AUDIO_LEVEL` in config.py
+- Check `min_duration` and `min_level` in config
 
 ### "MLX Audio Server not found" dialog
 - Install mlx-audio server first (see [Requirements](#installing-mlx-audio-server))

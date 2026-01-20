@@ -42,7 +42,14 @@ dot_color = "#ffcc00"
 dot_alpha = 0.7
 
 [clipboard]
-paste_delay = 0.1  # Seconds to wait before pasting
+# paste_delay: Seconds to wait for target app to activate before pasting
+paste_delay = 0.1
+# restore_clipboard: If true, restores your original clipboard after pasting transcription.
+# The transcription remains in clipboard history (accessible via Raycast, Alfred, Paste, etc.)
+restore_clipboard = true
+# restore_delay: Seconds to wait before restoring clipboard. Allows clipboard history apps
+# to capture the transcription. Increase if your clipboard manager isn't capturing it.
+restore_delay = 0.2
 """
 
 
