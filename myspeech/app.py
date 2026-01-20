@@ -128,11 +128,17 @@ class MySpeechApp:
 
         log.info("MySpeech started. Cmd+Ctrl+T: record, Cmd+Ctrl+R: open recording")
 
-        # Log available audio input devices
+        # Log audio input device
         devices = sd.query_devices()
         input_devices = [(i, d) for i, d in enumerate(devices) if d['max_input_channels'] > 0]
         default_idx = sd.default.device[0]
-        log.info(f"Audio inputs: {len(input_devices)} devices, default: [{default_idx}]")
+
+        if config.AUDIO_DEVICE is not None:
+            device_info = sd.query_devices(config.AUDIO_DEVICE)
+            log.info(f"Audio input: [{config.AUDIO_DEVICE}] {device_info['name']}")
+        else:
+            device_info = sd.query_devices(default_idx)
+            log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
         # Setup native macOS app on main thread
         self._popup.setup()
