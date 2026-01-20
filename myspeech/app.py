@@ -129,14 +129,11 @@ class MySpeechApp:
         log.info("MySpeech started. Cmd+Ctrl+T: record, Cmd+Ctrl+R: open recording")
 
         # Log audio input device
-        devices = sd.query_devices()
-        input_devices = [(i, d) for i, d in enumerate(devices) if d['max_input_channels'] > 0]
-        default_idx = sd.default.device[0]
-
         if config.AUDIO_DEVICE is not None:
             device_info = sd.query_devices(config.AUDIO_DEVICE)
             log.info(f"Audio input: [{config.AUDIO_DEVICE}] {device_info['name']}")
         else:
+            default_idx = sd.default.device[0]
             device_info = sd.query_devices(default_idx)
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
