@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 from myspeech.recorder import Recorder
 from myspeech.transcriber import Transcriber
-from myspeech.hotkey import HotkeyListener
+from myspeech.hotkey import HotkeyListener, check_accessibility_permissions, show_accessibility_dialog
 from myspeech.popup import RecordingPopup
 from myspeech.clipboard import ClipboardManager
 from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb, show_server_not_found_dialog
@@ -148,6 +148,11 @@ class MySpeechApp:
 
         # Defer menu bar setup to run within the event loop
         self._popup.schedule_delayed(100, setup_menubar)
+
+        # Check accessibility permissions before starting hotkey listener
+        if not check_accessibility_permissions():
+            log.warning("Accessibility permissions not granted")
+            show_accessibility_dialog()
 
         # Start hotkey listener in background thread
         self._hotkey = HotkeyListener(

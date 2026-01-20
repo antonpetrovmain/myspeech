@@ -13,6 +13,59 @@ import config
 log = logging.getLogger(__name__)
 
 
+def check_accessibility_permissions() -> bool:
+    """Check if the app has accessibility permissions.
+
+    Returns True if permissions are granted, False otherwise.
+    """
+    try:
+        # Try to use ApplicationServices framework
+        app_services = ctypes.CDLL('/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices')
+        AXIsProcessTrusted = app_services.AXIsProcessTrusted
+        AXIsProcessTrusted.restype = ctypes.c_bool
+        return AXIsProcessTrusted()
+    except Exception as e:
+        log.warning(f"Could not check accessibility permissions: {e}")
+        # Assume permissions are granted if we can't check
+        return True
+
+
+def show_accessibility_dialog():
+    """Show a native macOS dialog explaining how to grant accessibility permissions."""
+    try:
+        import subprocess
+        from AppKit import NSAlert, NSAlertStyleWarning, NSApplication
+
+        # Ensure NSApplication is initialized
+        NSApplication.sharedApplication()
+
+        alert = NSAlert.alloc().init()
+        alert.setAlertStyle_(NSAlertStyleWarning)
+        alert.setMessageText_("Accessibility Permission Required")
+        alert.setInformativeText_(
+            "MySpeech needs Accessibility permission to capture hotkeys.\n\n"
+            "After updating the app, you may need to:\n"
+            "1. Open System Settings > Privacy & Security > Accessibility\n"
+            "2. Remove MySpeech from the list (if present)\n"
+            "3. Add MySpeech again and enable it\n\n"
+            "Without this permission, hotkeys may not work correctly."
+        )
+        alert.addButtonWithTitle_("Open System Settings")
+        alert.addButtonWithTitle_("Continue Anyway")
+
+        response = alert.runModal()
+
+        # 1000 = first button (Open System Settings)
+        if response == 1000:
+            subprocess.run([
+                "open",
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+            ], check=False)
+
+    except Exception as e:
+        log.warning(f"Could not show accessibility dialog: {e}")
+
+
 def _parse_modifiers(modifier_str: str) -> set[str]:
     """Parse modifier string like 'cmd+ctrl' into set {'cmd', 'ctrl'}."""
     return {m.strip().lower() for m in modifier_str.split('+')}
@@ -138,6 +191,7 @@ class HotkeyListener:
         self._last_record_end: float = 0
         self._lock = threading.Lock()
         self._listener: keyboard.Listener | None = None
+        self._has_accessibility = False  # Track if we have accessibility permissions
 
         # Parse modifiers from config string
         self._required_modifiers = _parse_modifiers(config.HOTKEY_MODIFIERS)
@@ -243,32 +297,56 @@ class HotkeyListener:
     def _create_darwin_intercept(self):
         """Create callback to suppress hotkey keys at system level."""
         def darwin_intercept(event_type, event):
-            key_code = Quartz.CGEventGetIntegerValueField(
-                event, Quartz.kCGKeyboardEventKeycode
-            )
+            try:
+                key_code = Quartz.CGEventGetIntegerValueField(
+                    event, Quartz.kCGKeyboardEventKeycode
+                )
 
-            # Suppress hotkey keys while our hotkey is active or waiting for release
-            with self._lock:
-                if self._hotkey_active or self._waiting_for_release:
-                    suppress_keys = set()
-                    if self._record_key_vk is not None:
-                        suppress_keys.add(self._record_key_vk)
-                    if self._open_key_vk is not None:
-                        suppress_keys.add(self._open_key_vk)
-                    if key_code in suppress_keys:
-                        return None  # Suppress
+                # Suppress hotkey keys while our hotkey is active or waiting for release
+                with self._lock:
+                    if self._hotkey_active or self._waiting_for_release:
+                        suppress_keys = set()
+                        if self._record_key_vk is not None:
+                            suppress_keys.add(self._record_key_vk)
+                        if self._open_key_vk is not None:
+                            suppress_keys.add(self._open_key_vk)
+                        if key_code in suppress_keys:
+                            return None  # Suppress
 
-            return event  # Pass through
+                return event  # Pass through
+            except Exception as e:
+                # On any error, pass through the event to prevent system hang
+                log.error(f"Error in darwin_intercept: {e}")
+                return event
 
         return darwin_intercept
 
     def start(self):
-        self._listener = keyboard.Listener(
-            on_press=self._on_press,
-            on_release=self._on_release,
-            darwin_intercept=self._create_darwin_intercept(),
-        )
+        # Check accessibility permissions before starting
+        self._has_accessibility = check_accessibility_permissions()
+
+        if self._has_accessibility:
+            log.info("Accessibility permissions granted - key suppression enabled")
+            self._listener = keyboard.Listener(
+                on_press=self._on_press,
+                on_release=self._on_release,
+                darwin_intercept=self._create_darwin_intercept(),
+            )
+        else:
+            # No accessibility permissions - start without darwin_intercept
+            # This prevents the system hang but hotkey keys will leak to other apps
+            log.warning("Accessibility permissions NOT granted - key suppression disabled")
+            log.warning("Please grant Accessibility permission in System Settings > Privacy & Security > Accessibility")
+            self._listener = keyboard.Listener(
+                on_press=self._on_press,
+                on_release=self._on_release,
+            )
+
         self._listener.start()
+
+    def has_accessibility_permissions(self) -> bool:
+        """Return whether accessibility permissions are granted."""
+        return self._has_accessibility
 
     def stop(self):
         if self._listener:
