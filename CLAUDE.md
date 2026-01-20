@@ -16,6 +16,11 @@ uv pip install -e .
 
 # Run
 python main.py
+
+# Build app bundle
+uv pip install pyinstaller
+pyinstaller MySpeech.spec --clean
+# Result: dist/MySpeech.app
 ```
 
 ## Architecture
@@ -32,17 +37,27 @@ python main.py
 - `popup.py` - Native macOS yellow dot indicator using AppKit
 - `menubar.py` - Menu bar icon and status
 
+**Configuration system**:
+- `config.py` - Module-level constants loaded at import time, used throughout the app
+- `myspeech/user_config.py` - Reads/writes user config file at `~/.config/myspeech/config.toml`
+- Config values flow: `config.toml` → `user_config.get()` → `config.py` constants
+
 **Threading model**:
 - Main thread runs AppKit event loop (via PyObjCTools.AppHelper)
 - All hotkey callbacks, recording, transcription, and clipboard operations run in daemon threads
 - `Recorder` and `HotkeyListener` use locks for thread synchronization
 
-**Configuration**: All settings in `config.py` (server URL, hotkey codes, audio settings, popup appearance)
-
 ## Key Implementation Details
 
 - Hotkeys use virtual key codes (`key.vk`) not characters, making them keyboard-layout independent
+- `_build_vk_to_char_map()` in `hotkey.py` uses Carbon's UCKeyTranslate to map VK codes to characters for the current keyboard layout
 - `darwin_intercept` callback (using Quartz CGEvents) suppresses hotkey keys to prevent them leaking to other apps
+- Without accessibility permissions, app starts without `darwin_intercept` to avoid system hang (hotkeys still work but leak to other apps)
 - Audio recordings rejected if < 0.5 seconds or audio level < 100 (prevents silent recordings)
 - On record start: saves frontmost app bundle ID. On stop: transcribes, sets clipboard, restores focus, pastes via Cmd+V
-- Set `SAVE_RECORDING = True` in config to save recordings to `/tmp/myspeech_recording.wav` (use Cmd+Ctrl+R to open)
+
+## Logs and Debug
+
+- App log: `~/Library/Logs/MySpeech.log`
+- Server log: `~/Library/Logs/MySpeech-server.log`
+- Debug recording: Enable `save_recording = true` in config.toml, file saved to `/tmp/myspeech_recording.wav` (Cmd+Ctrl+R to open)
