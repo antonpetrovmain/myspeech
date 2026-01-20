@@ -49,7 +49,7 @@ paste_delay = 0.1
 restore_clipboard = true
 # restore_delay: Seconds to wait before restoring clipboard. Allows clipboard history apps
 # to capture the transcription. Increase if your clipboard manager isn't capturing it.
-restore_delay = 0.2
+restore_delay = 1.1
 """
 
 

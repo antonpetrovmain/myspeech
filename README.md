@@ -141,7 +141,7 @@ dot_alpha = 0.7
 [clipboard]
 paste_delay = 0.1               # Seconds to wait for app to activate before pasting
 restore_clipboard = true        # Restore original clipboard after pasting transcription
-restore_delay = 0.2             # Seconds before restoring (lets clipboard history capture transcription)
+restore_delay = 1.1             # Seconds before restoring (lets clipboard history capture transcription)
 ```
 
 **Clipboard Restore:** When enabled (default), your original clipboard content is restored after pasting the transcription. The transcription remains accessible via clipboard history apps (e.g., Raycast, Alfred, Paste). Set `restore_clipboard = false` to keep the transcription in your clipboard instead.
