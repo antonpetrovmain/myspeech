@@ -154,12 +154,16 @@ class MenuBar:
             devices = get_input_devices()
             default_name = next((name for idx, name in devices if idx == default_idx), "System Default")
 
+            # Get configured device from config
+            configured_device = config.AUDIO_DEVICE  # None means default
+            self._current_device = configured_device
+
             default_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 f"Default ({default_name})", "selectAudioDevice:", ""
             )
             default_item.setTarget_(_delegate)
             default_item.setTag_(-1)  # -1 means default
-            default_item.setState_(NSOnState)  # Default is selected initially
+            default_item.setState_(NSOnState if configured_device is None else NSOffState)
             _audio_menu.addItem_(default_item)
             _audio_menu_items.append((-1, default_item))
 
@@ -172,7 +176,7 @@ class MenuBar:
                 )
                 item.setTarget_(_delegate)
                 item.setTag_(idx)
-                item.setState_(NSOffState)
+                item.setState_(NSOnState if configured_device == idx else NSOffState)
                 _audio_menu.addItem_(item)
                 _audio_menu_items.append((idx, item))
 
@@ -229,3 +233,8 @@ class MenuBar:
             self._app._recorder.set_device(device_index)
             device_name = "Default" if device_index is None else f"[{device_index}]"
             log.info(f"Audio input changed to: {device_name}")
+
+        # Persist to config file
+        from myspeech import user_config
+        config_value = "default" if device_index is None else device_index
+        user_config.set("audio", "device", config_value)
