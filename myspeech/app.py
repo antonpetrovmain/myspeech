@@ -33,6 +33,38 @@ from myspeech.server import ServerManager, get_system_memory, get_process_memory
 from myspeech.menubar import MenuBar, get_app_version
 
 
+def show_no_audio_input_dialog():
+    """Show a native macOS dialog when no audio input device is available."""
+    try:
+        from AppKit import NSAlert, NSAlertStyleWarning, NSApplication
+
+        NSApplication.sharedApplication()
+
+        alert = NSAlert.alloc().init()
+        alert.setAlertStyle_(NSAlertStyleWarning)
+        alert.setMessageText_("No Audio Input Device")
+        alert.setInformativeText_(
+            "MySpeech could not find a default audio input device.\n\n"
+            "Please either:\n"
+            "1. Set a default input device in System Settings → Sound → Input\n"
+            "2. Or specify a device number in ~/.config/myspeech/config.toml:\n"
+            "   [audio]\n"
+            "   device = 2  # Replace with your device number\n\n"
+            "Run 'python -c \"import sounddevice; print(sounddevice.query_devices())\"' "
+            "to see available devices."
+        )
+        alert.addButtonWithTitle_("Open Sound Settings")
+        alert.addButtonWithTitle_("Quit")
+
+        response = alert.runModal()
+
+        if response == 1000:
+            subprocess.run(["open", "x-apple.systempreferences:com.apple.Sound-Settings.extension"], check=False)
+
+    except Exception as e:
+        log.warning(f"Could not show dialog: {e}")
+
+
 class MySpeechApp:
     def __init__(self):
         self._server = ServerManager()
@@ -134,6 +166,10 @@ class MySpeechApp:
             log.info(f"Audio input: [{config.AUDIO_DEVICE}] {device_info['name']}")
         else:
             default_idx = sd.default.device[0]
+            if default_idx < 0:
+                log.error("No default audio input device found")
+                show_no_audio_input_dialog()
+                sys.exit(1)
             device_info = sd.query_devices(default_idx)
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
