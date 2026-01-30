@@ -19,9 +19,14 @@ class Transcriber:
             audio_file = io.BytesIO(audio_bytes)
             audio_file.name = "recording.wav"
 
+            kwargs = {}
+            if config.LANGUAGE:
+                kwargs["language"] = config.LANGUAGE
+
             response = self.client.audio.transcriptions.create(
                 model=config.WHISPER_MODEL,
                 file=audio_file,
+                **kwargs,
             )
             return response.text.strip() if response.text else None
         except Exception:

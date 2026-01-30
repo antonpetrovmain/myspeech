@@ -6,6 +6,7 @@ from myspeech.user_config import get
 # Server (mlx-audio)
 MLX_AUDIO_SERVER_URL = get("server", "url", "http://localhost:8000/v1")
 WHISPER_MODEL = get("server", "model", "mlx-community/whisper-large-v3-turbo")
+LANGUAGE = get("server", "language", "")
 
 # Audio
 SAMPLE_RATE = get("audio", "sample_rate", 16000)

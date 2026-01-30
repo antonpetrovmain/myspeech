@@ -19,6 +19,7 @@ DEFAULT_CONFIG = """\
 [server]
 url = "http://localhost:8000/v1"
 model = "mlx-community/whisper-large-v3-turbo"
+language = ""  # ISO 639-1 code (e.g., "en", "bg", "de"). Empty = auto-detect
 
 [audio]
 sample_rate = 16000

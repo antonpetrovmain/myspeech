@@ -1,7 +1,20 @@
 import subprocess
 import time
 
+from AppKit import NSPasteboard, NSPasteboardTypeString
+
 import config
+
+
+def _get_clipboard() -> str | None:
+    pb = NSPasteboard.generalPasteboard()
+    return pb.stringForType_(NSPasteboardTypeString)
+
+
+def _set_clipboard(text: str):
+    pb = NSPasteboard.generalPasteboard()
+    pb.clearContents()
+    pb.setString_forType_(text, NSPasteboardTypeString)
 
 
 class ClipboardManager:
@@ -25,19 +38,13 @@ class ClipboardManager:
         # Save current clipboard text if restore is enabled
         if config.RESTORE_CLIPBOARD:
             try:
-                result = subprocess.run(["pbpaste"], capture_output=True, text=True, timeout=2)
-                self._saved_clipboard_text = result.stdout if result.returncode == 0 else None
+                self._saved_clipboard_text = _get_clipboard()
             except Exception:
                 self._saved_clipboard_text = None
 
     def set_and_paste(self, text: str) -> bool:
         try:
-            # Copy to clipboard using pbcopy
-            process = subprocess.Popen(
-                ["pbcopy"],
-                stdin=subprocess.PIPE,
-            )
-            process.communicate(text.encode("utf-8"))
+            _set_clipboard(text)
 
             # Restore focus to original app and paste
             if self._saved_app:
@@ -58,14 +65,13 @@ class ClipboardManager:
             if config.RESTORE_CLIPBOARD and self._saved_clipboard_text is not None:
                 try:
                     time.sleep(config.RESTORE_DELAY)
-                    restore_process = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE)
-                    restore_process.communicate(self._saved_clipboard_text.encode("utf-8"))
+                    _set_clipboard(self._saved_clipboard_text)
                 except Exception:
                     pass
             self._saved_clipboard_text = None
 
             self._saved_app = None
-            return process.returncode == 0
+            return True
         except Exception:
             self._saved_app = None
             self._saved_clipboard_text = None
