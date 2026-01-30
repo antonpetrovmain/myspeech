@@ -152,7 +152,7 @@ class MySpeechApp:
         if not self._server.start():
             log.error("Cannot start without mlx-audio server. Exiting.")
             show_server_not_found_dialog()
-            sys.exit(1)
+            os._exit(1)
 
         # Display server info
         log.info(f"Model: {config.WHISPER_MODEL}")
@@ -169,7 +169,7 @@ class MySpeechApp:
             if default_idx < 0:
                 log.error("No default audio input device found")
                 show_no_audio_input_dialog()
-                sys.exit(1)
+                os._exit(1)
             device_info = sd.query_devices(default_idx)
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
@@ -179,25 +179,27 @@ class MySpeechApp:
         # Create menu bar (setup deferred to after event loop starts)
         self._menubar = MenuBar(self)
 
-        def setup_menubar():
+        def deferred_setup():
             self._menubar.setup(quit_callback=self._popup.stop)
 
-        # Defer menu bar setup to run within the event loop
-        self._popup.schedule_delayed(100, setup_menubar)
+            # Check accessibility permissions inside the event loop
+            if not check_accessibility_permissions():
+                log.warning("Accessibility permissions not granted")
+                if not show_accessibility_dialog():
+                    # User chose to open System Settings — quit cleanly
+                    self._popup.stop()
+                    return
 
-        # Check accessibility permissions before starting hotkey listener
-        if not check_accessibility_permissions():
-            log.warning("Accessibility permissions not granted")
-            show_accessibility_dialog()
+            # Start hotkey listener in background thread
+            self._hotkey = HotkeyListener(
+                on_record_start=self._on_record_start,
+                on_record_stop=self._on_record_stop,
+                on_keys_released=self._on_keys_released,
+                on_open_recording=self._on_open_recording,
+            )
+            self._hotkey.start()
 
-        # Start hotkey listener in background thread
-        self._hotkey = HotkeyListener(
-            on_record_start=self._on_record_start,
-            on_record_stop=self._on_record_stop,
-            on_keys_released=self._on_keys_released,
-            on_open_recording=self._on_open_recording,
-        )
-        self._hotkey.start()
+        self._popup.schedule_delayed(100, deferred_setup)
 
         # Handle Ctrl+C
         def on_sigint(*args):

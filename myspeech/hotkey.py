@@ -30,13 +30,15 @@ def check_accessibility_permissions() -> bool:
         return True
 
 
-def show_accessibility_dialog():
-    """Show a native macOS dialog explaining how to grant accessibility permissions."""
+def show_accessibility_dialog() -> bool:
+    """Show a native macOS dialog explaining how to grant accessibility permissions.
+
+    Returns True if user chose "Continue Anyway", False if "Open System Settings" (app should quit).
+    """
     try:
         import subprocess
         from AppKit import NSAlert, NSAlertStyleWarning, NSApplication
 
-        # Ensure NSApplication is initialized
         NSApplication.sharedApplication()
 
         alert = NSAlert.alloc().init()
@@ -61,9 +63,13 @@ def show_accessibility_dialog():
                 "open",
                 "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
             ], check=False)
+            return False
+
+        return True
 
     except Exception as e:
         log.warning(f"Could not show accessibility dialog: {e}")
+        return True
 
 
 def _parse_modifiers(modifier_str: str) -> set[str]:
