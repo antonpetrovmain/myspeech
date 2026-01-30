@@ -45,15 +45,15 @@ cd "$TEMP_DIR"
 
 # Get latest release download URL
 echo "Finding latest release..."
-RELEASE_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep "browser_download_url.*macos-arm64.zip" | cut -d '"' -f 4)
+RELEASE_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep "browser_download_url.*\.zip" | cut -d '"' -f 4)
 
 if [ -z "$RELEASE_URL" ]; then
     echo "Error: Could not find latest release"
     exit 1
 fi
 
-# Extract version from filename (e.g., MySpeech-v0.2.3-macos-arm64.zip)
-NEW_VERSION=$(echo "$RELEASE_URL" | sed -n 's/.*MySpeech-v\([0-9.]*\)-.*/\1/p')
+# Extract version from filename (e.g., MySpeech-v0.3.0.zip)
+NEW_VERSION=$(echo "$RELEASE_URL" | sed -n 's/.*MySpeech-v\([0-9.]*\).*\.zip/\1/p')
 
 # Check currently installed version
 CURRENT_VERSION="not installed"
