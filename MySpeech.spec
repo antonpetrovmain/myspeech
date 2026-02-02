@@ -1,8 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller spec file for MySpeech.app"""
 
+import re
 import sys
 from pathlib import Path
+
+# Read version from myspeech/__init__.py
+_version_match = re.search(r'__version__\s*=\s*"([^"]+)"', Path("myspeech/__init__.py").read_text())
+VERSION = _version_match.group(1) if _version_match else "0.0.0"
 
 block_cipher = None
 
@@ -95,8 +100,8 @@ app = BUNDLE(
     info_plist={
         'CFBundleName': 'MySpeech',
         'CFBundleDisplayName': 'MySpeech',
-        'CFBundleVersion': '0.3.1',
-        'CFBundleShortVersionString': '0.3.1',
+        'CFBundleVersion': VERSION,
+        'CFBundleShortVersionString': VERSION,
         'LSMinimumSystemVersion': '13.0',
         'NSMicrophoneUsageDescription': 'MySpeech needs microphone access to record your voice for transcription.',
         'NSAppleEventsUsageDescription': 'MySpeech needs automation access to paste transcribed text.',
