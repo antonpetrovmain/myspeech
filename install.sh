@@ -32,11 +32,14 @@ REPO="antonpetrovmain/myspeech"
 
 echo "Installing $APP_NAME..."
 
-# Check if we need sudo for /Applications
+# Create install dir if it doesn't exist
+mkdir -p "$INSTALL_DIR"
+
+# Check if we need sudo
 NEEDS_SUDO=false
-if [ ! -w "$INSTALL_DIR" ] || [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
+if [ ! -w "$INSTALL_DIR" ]; then
     NEEDS_SUDO=true
-    echo "Administrator privileges required to install to /Applications"
+    echo "Administrator privileges required to install to $INSTALL_DIR"
 fi
 
 # Helper to run commands with sudo if needed
@@ -114,4 +117,4 @@ echo ""
 echo "NOTE: You need to grant Accessibility permission:"
 echo "  System Settings > Privacy & Security > Accessibility > Add MySpeech"
 echo ""
-echo "Run with: open /Applications/MySpeech.app"
+echo "Run with: open $INSTALL_DIR/MySpeech.app"
