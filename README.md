@@ -47,7 +47,13 @@ Run this one-liner in Terminal:
 curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash
 ```
 
-This downloads, installs, and removes the Gatekeeper quarantine automatically. You may be prompted for your admin password to install to `/Applications`.
+To install to a custom directory (no admin password needed):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash -s -- --dir ~/tools
+```
+
+This downloads, installs, and removes the Gatekeeper quarantine automatically. When installing to `/Applications` (default), you may be prompted for your admin password.
 
 ### Manual Install
 
