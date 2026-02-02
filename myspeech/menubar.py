@@ -40,6 +40,7 @@ _delegate = None
 _status_item = None
 _audio_menu_items = []
 _language_menu_items = []
+_audio_submenu = None
 
 
 def _build_submenu(title, choices, action, delegate, current_value, NSMenu, NSMenuItem, NSOnState, NSOffState):
@@ -89,7 +90,7 @@ class MenuBar:
 
     def setup(self, quit_callback=None):
         """Set up the menu bar."""
-        global _delegate, _status_item, _audio_menu_items, _language_menu_items
+        global _delegate, _status_item, _audio_menu_items, _language_menu_items, _audio_submenu
 
         self._quit_callback = quit_callback
         menu_bar_instance = self
@@ -128,6 +129,38 @@ class MenuBar:
                     device = None if device_idx == -1 else device_idx
                     if self.menubar:
                         self.menubar._select_device(device)
+
+                def menuNeedsUpdate_(self, menu):
+                    global _audio_menu_items, _audio_submenu
+                    if _audio_submenu is None or self.menubar is None:
+                        return
+                    try:
+                        from AppKit import NSMenuItem, NSOnState, NSOffState
+                        import sounddevice as sd
+                        sd._terminate()
+                        sd._initialize()
+
+                        default_idx = get_default_input_device()
+                        devices = get_input_devices()
+                        default_name = next((name for idx, name in devices if idx == default_idx), "System Default")
+                        current = self.menubar._current_device
+
+                        choices = [(-1, None, f"Default ({default_name})")]
+                        choices += [(idx, idx, f"[{idx}] {name}") for idx, name in devices]
+
+                        _audio_submenu.removeAllItems()
+                        items = []
+                        for tag, value, label in choices:
+                            item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                                label, "selectAudioDevice:", "")
+                            item.setTarget_(self)
+                            item.setTag_(tag)
+                            item.setState_(NSOnState if value == current else NSOffState)
+                            _audio_submenu.addItem_(item)
+                            items.append((tag, value, item))
+                        _audio_menu_items = items
+                    except Exception as e:
+                        log.debug(f"Failed to refresh audio devices: {e}")
 
                 def quitApp_(self, sender):
                     import os
@@ -200,6 +233,7 @@ class MenuBar:
                 "Audio Input", audio_choices, "selectAudioDevice:", _delegate,
                 configured_device, NSMenu, NSMenuItem, NSOnState, NSOffState,
             )
+            _audio_submenu = audio_parent.submenu()
             menu.addItem_(audio_parent)
 
             menu.addItem_(NSMenuItem.separatorItem())
@@ -211,6 +245,7 @@ class MenuBar:
             quit_item.setTarget_(_delegate)
             menu.addItem_(quit_item)
 
+            menu.setDelegate_(_delegate)
             _status_item.setMenu_(menu)
             self._is_setup = True
             log.info("Menu bar initialized")
