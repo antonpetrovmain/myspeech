@@ -61,3 +61,14 @@ pyinstaller MySpeech.spec --clean
 - App log: `~/Library/Logs/MySpeech.log`
 - Server log: `~/Library/Logs/MySpeech-server.log`
 - Debug recording: Enable `save_recording = true` in config.toml, file saved to `/tmp/myspeech_recording.wav` (Cmd+Ctrl+R to open)
+
+## Release Process
+
+After a validated fix, run the full release pipeline:
+
+1. Bump version in `myspeech/__init__.py`
+2. Commit all changes
+3. Push to remote
+4. Build the app bundle: `pyinstaller MySpeech.spec --clean`
+5. Zip: `cd dist && zip -r MySpeech-v<VERSION>.zip MySpeech.app`
+6. Create GitHub release with tag and upload the zip: `gh release create v<VERSION> dist/MySpeech-v<VERSION>.zip --title "v<VERSION>" --notes "<changelog>"`

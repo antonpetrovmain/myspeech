@@ -42,6 +42,27 @@ class Recorder:
         """Get the current audio input device index. None means default."""
         return self._device
 
+    def _open_stream(self):
+        """Open and start the audio input stream."""
+        if self._device is not None:
+            device_info = sd.query_devices(self._device)
+            device_name = f"[{self._device}] {device_info['name']}"
+        else:
+            default_idx = sd.default.device[0]
+            device_info = sd.query_devices(default_idx)
+            device_name = f"Default ([{default_idx}] {device_info['name']})"
+
+        log.info(f"Opening audio stream (device={device_name}, rate={config.SAMPLE_RATE})")
+        self._stream = sd.InputStream(
+            samplerate=config.SAMPLE_RATE,
+            channels=config.CHANNELS,
+            dtype=np.int16,
+            device=self._device,
+            callback=self._audio_callback,
+        )
+        self._stream.start()
+        log.info("Audio stream started successfully")
+
     def _audio_callback(self, indata: np.ndarray, frames: int, time_info, status):
         with self._lock:
             if self._recording:
@@ -63,29 +84,18 @@ class Recorder:
             self._recording = True
 
         try:
-            # Resolve device name for logging
-            if self._device is not None:
-                device_info = sd.query_devices(self._device)
-                device_name = f"[{self._device}] {device_info['name']}"
-            else:
-                default_idx = sd.default.device[0]
-                device_info = sd.query_devices(default_idx)
-                device_name = f"Default ([{default_idx}] {device_info['name']})"
-
-            log.info(f"Opening audio stream (device={device_name}, rate={config.SAMPLE_RATE})")
-            self._stream = sd.InputStream(
-                samplerate=config.SAMPLE_RATE,
-                channels=config.CHANNELS,
-                dtype=np.int16,
-                device=self._device,
-                callback=self._audio_callback,
-            )
-            self._stream.start()
-            log.info("Audio stream started successfully")
+            self._open_stream()
         except Exception as e:
-            log.error(f"Failed to start recording: {e}")
-            with self._lock:
-                self._recording = False
+            log.warning(f"Failed to open audio stream: {e}")
+            log.info("Reinitializing PortAudio and retrying...")
+            try:
+                sd._terminate()
+                sd._initialize()
+                self._open_stream()
+            except Exception as e2:
+                log.error(f"Failed to start recording after reinit: {e2}")
+                with self._lock:
+                    self._recording = False
 
     def stop(self) -> bytes:
         with self._lock:
