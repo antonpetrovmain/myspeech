@@ -44,13 +44,13 @@ mlx_audio.server --port 8000
 Run this one-liner in Terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash
+curl -fsSL -H "Cache-Control: no-cache" https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash
 ```
 
 To install to a custom directory (no admin password needed):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash -s -- --dir ~/tools
+curl -fsSL -H "Cache-Control: no-cache" https://raw.githubusercontent.com/antonpetrovmain/myspeech/main/install.sh | bash -s -- --dir ~/tools
 ```
 
 This downloads, installs, and removes the Gatekeeper quarantine automatically. When installing to `/Applications` (default), you may be prompted for your admin password.
