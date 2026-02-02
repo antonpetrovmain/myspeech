@@ -2,23 +2,32 @@
 # MySpeech Installer
 # Downloads and installs MySpeech, bypassing Gatekeeper
 #
-# Usage: install.sh [--force|-f]
-#   --force, -f  Force reinstall even if same version is installed
+# Usage: install.sh [--force|-f] [--dir|-d <path>]
+#   --force, -f        Force reinstall even if same version is installed
+#   --dir, -d <path>   Install to a custom directory instead of /Applications
 
 set -e
 
 # Parse arguments
 FORCE=false
-for arg in "$@"; do
-    case $arg in
+INSTALL_DIR="/Applications"
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --force|-f)
             FORCE=true
+            shift
+            ;;
+        --dir|-d)
+            INSTALL_DIR="$2"
+            shift 2
+            ;;
+        *)
+            shift
             ;;
     esac
 done
 
 APP_NAME="MySpeech"
-INSTALL_DIR="/Applications"
 REPO="antonpetrovmain/myspeech"
 
 echo "Installing $APP_NAME..."
