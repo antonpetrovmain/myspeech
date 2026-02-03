@@ -173,6 +173,9 @@ class MySpeechApp:
             device_info = sd.query_devices(default_idx)
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
+        # Pre-warm audio stream for instant recording start
+        self._recorder.ensure_stream()
+
         # Setup native macOS app on main thread
         self._popup.setup()
 
@@ -212,6 +215,7 @@ class MySpeechApp:
         finally:
             if self._hotkey:
                 self._hotkey.stop()
+            self._recorder._close_stream()
             self._server.stop()
             log.info("MySpeech stopped.")
 

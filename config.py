@@ -13,6 +13,7 @@ SAMPLE_RATE = get("audio", "sample_rate", 16000)
 CHANNELS = get("audio", "channels", 1)
 _device = get("audio", "device", "default")
 AUDIO_DEVICE = None if _device == "default" else _device
+AUDIO_GAIN = get("audio", "gain", 1.0)
 SAVE_RECORDING = get("audio", "save_recording", True)
 RECORDING_PATH = get("audio", "recording_path", "/tmp/myspeech_recording.wav")
 MIN_RECORDING_DURATION = get("audio", "min_duration", 0.5)

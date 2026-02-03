@@ -25,6 +25,7 @@ language = ""  # ISO 639-1 code (e.g., "en", "bg", "de"). Empty = auto-detect
 sample_rate = 16000
 channels = 1
 device = "default"  # "default" or device index (e.g., 4)
+gain = 1.0  # Audio gain multiplier (1.0 = no change, 2.0 = double volume)
 save_recording = true
 recording_path = "/tmp/myspeech_recording.wav"
 min_duration = 0.5  # Minimum seconds to accept recording
