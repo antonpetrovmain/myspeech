@@ -32,11 +32,13 @@ class Recorder:
         self._lock = threading.Lock()
         self._recording = False
         self._device = config.AUDIO_DEVICE  # None means default
+        self._device_name: str | None = None  # Stored name for reconnection recovery
         self._stream_active = False
 
     def set_device(self, device_index: int | None):
         """Set the audio input device. None means use default."""
         self._device = device_index
+        self._device_name = None  # Will be populated on next successful open
         # Restart stream with new device if it was running
         if self._stream_active:
             self._close_stream()
@@ -69,6 +71,8 @@ class Recorder:
         )
         self._stream.start()
         self._stream_active = True
+        if self._device is not None:
+            self._device_name = device_info['name']
         log.info("Audio stream started successfully")
 
     def _close_stream(self):
@@ -87,8 +91,18 @@ class Recorder:
             if self._recording:
                 self._frames.append(indata.copy())
 
+    def _find_device_by_name(self, name: str) -> int | None:
+        """Search input devices for one matching name. Returns new index or None."""
+        try:
+            for i, d in enumerate(sd.query_devices()):
+                if d['max_input_channels'] > 0 and d['name'] == name:
+                    return i
+        except Exception:
+            pass
+        return None
+
     def ensure_stream(self):
-        """Ensure the audio stream is open. Call this at app startup for instant recording."""
+        """Ensure the audio stream is open."""
         if not self._stream_active:
             try:
                 self._open_stream()
@@ -98,6 +112,13 @@ class Recorder:
                 try:
                     sd._terminate()
                     sd._initialize()
+                    # If a named device was previously used, find it at its new index
+                    if self._device is not None and self._device_name:
+                        recovered = self._find_device_by_name(self._device_name)
+                        if recovered is not None and recovered != self._device:
+                            log.info(f"Device '{self._device_name}' moved to index {recovered}, recovering")
+                            self._device = recovered
+                            config.AUDIO_DEVICE = recovered
                     self._open_stream()
                 except Exception as e2:
                     log.error(f"Failed to open audio stream after reinit: {e2}")
