@@ -113,13 +113,19 @@ class Recorder:
         log.info("Recording started")
 
     def stop(self) -> bytes:
-        """Stop recording and return audio data. Stream stays open for next recording."""
+        """Stop recording, close the audio stream, and return audio data."""
         with self._lock:
             self._recording = False
-            log.info(f"Recording stopped, captured {len(self._frames)} frames")
-            if not self._frames:
-                return b""
-            audio_data = np.concatenate(self._frames, axis=0)
+            frames = self._frames
+            self._frames = []
+
+        log.info(f"Recording stopped, captured {len(frames)} frames")
+        self._close_stream()
+
+        if not frames:
+            return b""
+
+        audio_data = np.concatenate(frames, axis=0)
 
         # Apply gain if configured (boost quiet microphones)
         if config.AUDIO_GAIN != 1.0:

@@ -75,6 +75,7 @@ class MySpeechApp:
         self._menubar: MenuBar | None = None
         self._hotkey: HotkeyListener | None = None
         self._lock = threading.Lock()
+        self._record_ready = threading.Semaphore(0)  # Ensures stop waits for start
 
     def _on_record_start(self):
         log.info("Hotkey pressed - starting recording")
@@ -82,8 +83,11 @@ class MySpeechApp:
         threading.Thread(target=self._clipboard.save, daemon=True).start()
 
         # Start recording directly (we're already in a daemon thread)
-        with self._lock:
-            self._recorder.start()
+        try:
+            with self._lock:
+                self._recorder.start()
+        finally:
+            self._record_ready.release()  # Signal that recorder.start() has been called
 
         # Update menu bar to show recording status
         if self._menubar:
@@ -93,6 +97,8 @@ class MySpeechApp:
         self._popup.show()
 
     def _on_record_stop(self):
+        # Wait for recorder.start() to be called before stopping (handles rapid press-release)
+        self._record_ready.acquire()
         # Stop recording directly (we're already in a daemon thread)
         with self._lock:
             audio_bytes = self._recorder.stop()
@@ -172,9 +178,6 @@ class MySpeechApp:
                 os._exit(1)
             device_info = sd.query_devices(default_idx)
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
-
-        # Pre-warm audio stream for instant recording start
-        self._recorder.ensure_stream()
 
         # Setup native macOS app on main thread
         self._popup.setup()
