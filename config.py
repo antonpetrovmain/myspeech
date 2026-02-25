@@ -25,11 +25,6 @@ HOTKEY_KEY = get("hotkey", "record_key", "t")
 HOTKEY_OPEN_RECORDING_KEY = get("hotkey", "open_recording_key", "r")
 HOTKEY_DEBOUNCE_SECONDS = get("hotkey", "debounce_seconds", 0.5)
 
-# Popup (recording dot indicator)
-POPUP_DOT_SIZE = get("popup", "dot_size", 16)
-POPUP_DOT_COLOR = get("popup", "dot_color", "#ffcc00")
-POPUP_DOT_ALPHA = get("popup", "dot_alpha", 0.7)
-
 # Clipboard
 PASTE_DELAY = get("clipboard", "paste_delay", 0.1)
 RESTORE_CLIPBOARD = get("clipboard", "restore_clipboard", True)

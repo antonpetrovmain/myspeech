@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 from myspeech.recorder import Recorder
 from myspeech.transcriber import Transcriber
 from myspeech.hotkey import HotkeyListener, check_accessibility_permissions, show_accessibility_dialog
-from myspeech.popup import RecordingPopup
+from myspeech.appkit_runner import AppKitRunner
 from myspeech.clipboard import ClipboardManager
 from myspeech.server import ServerManager, get_system_memory, get_process_memory_mb, show_server_not_found_dialog
 from myspeech.menubar import MenuBar, get_app_version
@@ -70,7 +70,7 @@ class MySpeechApp:
         self._server = ServerManager()
         self._recorder = Recorder()
         self._transcriber = Transcriber()
-        self._popup = RecordingPopup()
+        self._runner = AppKitRunner()
         self._clipboard = ClipboardManager()
         self._menubar: MenuBar | None = None
         self._hotkey: HotkeyListener | None = None
@@ -93,9 +93,6 @@ class MySpeechApp:
         if self._menubar:
             self._menubar.set_recording(True)
 
-        # Show popup (schedule on main thread for UI)
-        self._popup.show()
-
     def _on_record_stop(self):
         # Wait for recorder.start() to be called before stopping (handles rapid press-release)
         self._record_ready.acquire()
@@ -117,10 +114,6 @@ class MySpeechApp:
             args=(audio_bytes,),
             daemon=True,
         ).start()
-
-    def _on_keys_released(self):
-        """Called when all hotkey keys are released - safe to hide popup."""
-        self._popup.hide()
 
     def _process_transcription(self, audio_bytes: bytes):
         log.info("Transcribing...")
@@ -180,41 +173,40 @@ class MySpeechApp:
             log.info(f"Audio input: Default ([{default_idx}] {device_info['name']})")
 
         # Setup native macOS app on main thread
-        self._popup.setup()
+        self._runner.setup()
 
         # Create menu bar (setup deferred to after event loop starts)
         self._menubar = MenuBar(self)
 
         def deferred_setup():
-            self._menubar.setup(quit_callback=self._popup.stop)
+            self._menubar.setup(quit_callback=self._runner.stop)
 
             # Check accessibility permissions inside the event loop
             if not check_accessibility_permissions():
                 log.warning("Accessibility permissions not granted")
                 if not show_accessibility_dialog():
                     # User chose to open System Settings — quit cleanly
-                    self._popup.stop()
+                    self._runner.stop()
                     return
 
             # Start hotkey listener in background thread
             self._hotkey = HotkeyListener(
                 on_record_start=self._on_record_start,
                 on_record_stop=self._on_record_stop,
-                on_keys_released=self._on_keys_released,
                 on_open_recording=self._on_open_recording,
             )
             self._hotkey.start()
 
-        self._popup.schedule_delayed(100, deferred_setup)
+        self._runner.schedule_delayed(100, deferred_setup)
 
         # Handle Ctrl+C
         def on_sigint(*args):
-            self._popup.stop()
+            self._runner.stop()
 
         signal.signal(signal.SIGINT, on_sigint)
 
         try:
-            self._popup.run()
+            self._runner.run()
         finally:
             if self._hotkey:
                 self._hotkey.stop()

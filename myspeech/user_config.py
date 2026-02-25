@@ -38,11 +38,6 @@ record_key = "t"  # Hold to record (Cmd+Ctrl+T)
 open_recording_key = "r"  # Open last recording (Cmd+Ctrl+R)
 debounce_seconds = 0.5
 
-[popup]
-dot_size = 16
-dot_color = "#ffcc00"
-dot_alpha = 0.7
-
 [clipboard]
 # paste_delay: Seconds to wait for target app to activate before pasting
 paste_delay = 0.1

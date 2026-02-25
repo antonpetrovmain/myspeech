@@ -34,7 +34,7 @@ pyinstaller MySpeech.spec --clean
 - `recorder.py` - Audio capture via sounddevice with callback streaming, outputs WAV bytes
 - `transcriber.py` - Sends audio to mlx-audio server using OpenAI-compatible API
 - `clipboard.py` - Saves frontmost app, sets clipboard via pbcopy, pastes via AppleScript
-- `popup.py` - Native macOS yellow dot indicator using AppKit
+- `appkit_runner.py` - Manages the native macOS AppKit event loop
 - `menubar.py` - Menu bar icon and status
 
 **Configuration system**:
