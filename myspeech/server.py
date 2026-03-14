@@ -29,7 +29,7 @@ def show_server_not_found_dialog():
             "  uv venv ~/.mlx-audio-venv --python 3.12\n"
             "  source ~/.mlx-audio-venv/bin/activate\n"
             "  uv pip install mlx-audio\n"
-            "  mlx_audio.server --port 8000\n\n"
+            "  mlx_audio.server --port 8765\n\n"
             "See the README for detailed instructions."
         )
         alert.addButtonWithTitle_("Open README")
@@ -88,7 +88,7 @@ class ServerManager:
 
         server_cmd = self._find_server_command()
         if not server_cmd:
-            log.error("mlx_audio.server not found. Start manually: mlx_audio.server --port 8000")
+            log.error("mlx_audio.server not found. Start manually: mlx_audio.server --port 8765")
             return False
 
         log.info(f"Starting mlx-audio server from {server_cmd}...")
@@ -105,8 +105,12 @@ class ServerManager:
         server_log = Path.home() / "Library/Logs/MySpeech-server.log"
         self._server_log_file = open(server_log, "w")
 
+        # Extract port from configured server URL
+        from urllib.parse import urlparse
+        port = str(urlparse(config.MLX_AUDIO_SERVER_URL).port or 8765)
+
         self._process = subprocess.Popen(
-            [server_cmd, "--port", "8000", "--workers", "1"],
+            [server_cmd, "--port", port, "--workers", "1"],
             stdout=self._server_log_file,
             stderr=self._server_log_file,
             env=env,
